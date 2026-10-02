@@ -7,7 +7,7 @@ VADER_API = "https://opendata-download-metobs.smhi.se/api/version/1.0"
 # Prognoshorisont i timmar
 HORISONT = 6
 
-# Tidsperioder#
+# Tidsperioder
 TRAIN_START = "2023-05-26"  # när PM2.5-tidsserien startade
 TRAIN_SLUT = "2025-12-31"
 VALIDERING_START = "2026-01-01"
