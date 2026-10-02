@@ -1,5 +1,17 @@
 """Gemensamma inställningar för projektet."""
 
+from pathlib import Path
+
+# Mappar
+# Path(__file__) är sökvägen till den här filen (src/config.py).
+# .resolve() gör den till en fullständig sökväg
+# .parent går upp en nivå till mappen src/, och ytterligare .parent till projektmappen.
+# På så sätt fungerar sökvägarna oavsett varifrån koden körs, t.ex. från en notebook i notebooks/
+PROJEKT_ROT = Path(__file__).resolve().parent.parent
+
+RAW_DIR = PROJEKT_ROT / "data" / "raw"              # rådata från API:erna, versionshanteras
+PROCESSED_DIR = PROJEKT_ROT / "data" / "processed"  # rensad data, skapas av koden, versionshanteras inte
+
 # Datakällor
 LUFT_API = "https://datavardluft.smhi.se/52North/api"
 VADER_API = "https://opendata-download-metobs.smhi.se/api/version/1.0"
