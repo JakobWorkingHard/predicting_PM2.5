@@ -1,6 +1,8 @@
 """Gemensamma inställningar för projektet."""
 
 from pathlib import Path
+from dataclasses import dataclass
+from pathlib import Path
 
 # Mappar
 # Path(__file__) är sökvägen till den här filen (src/config.py).
