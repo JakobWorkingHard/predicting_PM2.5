@@ -1,0 +1,35 @@
+# Gemensamma inställningar för projektet.
+
+[paths]
+# Anges som relativa sökvägar från projektets rot
+raw_dir = "data/raw"              # rådata från API:erna, versionshanteras
+processed_dir = "data/processed"  # rensad data, skapas av koden, versionshanteras inte
+
+[api]
+luft = "https://datavardluft.smhi.se/52North/api"
+vader = "https://opendata-download-metobs.smhi.se/api/version/1.0"
+
+[model]
+horisont = 6 # Prognoshorisont i timmar
+
+[time]
+train_start = "2023-05-26"  # när PM2.5-tidsserien startade
+train_slut = "2025-12-31"
+validering_start = "2026-01-01"
+validering_slut = "2026-04-30"
+test_start = "2026-05-01"   # hämtas inte under utvecklingen
+
+[station.pm25]
+# Det är ca 4 km mellan stationerna, men ingen mätstation närmare Malmö A mäter PM2.5
+namn = "Malmö Dalaplan"
+tidsserie_id = 6247         # aktiv sedan 2023-05-26, täcker hela perioden
+lat = 55.584747
+lon = 13.006230
+
+[station.vader]
+namn = "Malmö A"
+id = 52350                  # SMHI CORE-station, data sedan 1990
+lat = 55.5715
+lon = 13.0708
+# Väder-Parametrar vi vill extrahera från vårt väder-api
+parametrar = { "Lufttemperatur" = 1, "Vindriktning" = 3, "Vindhastighet" = 4, "Relativ luftfuktighet" = 6, "Nederbördsmängd" = 7 }
