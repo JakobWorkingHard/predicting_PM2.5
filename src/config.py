@@ -7,6 +7,7 @@ import tomllib
 class ProjectConfig:
     # Mappar
     raw_dir: Path
+    merged_dir: Path
     processed_dir: Path
     
     # API:er
@@ -50,6 +51,7 @@ def load_config(PATH_CONFIG_TOML: Path, PATH_PROJECT_ROOT: Path ) -> ProjectConf
     return ProjectConfig(
         # Konvertera textsträngar till Path-objekt baserat på projektets rot
         raw_dir=PATH_PROJECT_ROOT / p["raw_dir"],
+        merged_dir = PATH_PROJECT_ROOT / p["merged_dir"],
         processed_dir=PATH_PROJECT_ROOT/ p["processed_dir"],
         
         luft_api=api["luft"],
