@@ -40,7 +40,7 @@ def orchestration(cfg: ProjectConfig):
         print(f"Saknar mergade raw-datan: {train_merged_path}. Sätter ihop {train_pm25_path} med {train_vader_path}")
         pm_df = pd.read_csv(train_pm25_path)
         vader_df = pd.read_csv(train_vader_path)
-        merge_df_and_generate_csv(pm_df, vader_df, "tid", train_merged_path)
+        merge_df_and_generate_csv(pm_df, vader_df, "tid", train_merged_path, False)
         print(f"Genererat {train_merged_path}")
 
     else:
