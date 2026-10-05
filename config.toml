@@ -3,7 +3,9 @@
 [paths]
 # Anges som relativa sökvägar från projektets rot
 raw_dir = "data/raw"              # rådata från API:erna, versionshanteras
+merged_dir = "data/merged"        # Mergad raw data
 processed_dir = "data/processed"  # rensad data, skapas av koden, versionshanteras inte
+
 
 [api]
 luft = "https://datavardluft.smhi.se/52North/api"
