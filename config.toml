@@ -6,6 +6,13 @@ raw_dir = "data/raw"              # rådata från API:erna, versionshanteras
 merged_dir = "data/merged"        # Mergad raw data
 processed_dir = "data/processed"  # rensad data, skapas av koden, versionshanteras inte
 
+[paths.filenames]
+# {}-placeholders ersätts i config.py med värden från TOML
+train_pm25              = "train_{pm25_station}_{train_start}_{train_slut}_{pm25_tidsserie_id}.csv"
+train_vader             = "train_{vaderstation}_{train_start}_{train_slut}_{vaderstation_id}.csv"
+train_merged            = "train_merged.csv"
+train_vader_forskjuten  = "train_vader_forskjuten.csv"
+train_merged_forskjuten = "train_merged_forskjoten.csv"
 
 [api]
 luft = "https://datavardluft.smhi.se/52North/api"
