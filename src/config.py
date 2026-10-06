@@ -77,6 +77,7 @@ def load_config(PATH_CONFIG_TOML: Path, PATH_PROJECT_ROOT: Path ) -> ProjectConf
         "train_slut": train_slut,
         "pm25_tidsserie_id": pm25_tidsserie_id,
         "vaderstation_id": vaderstation_id,
+        "horisont": mod["horisont"],
     }
 
     return ProjectConfig(

@@ -8,11 +8,11 @@ processed_dir = "data/processed"  # rensad data, skapas av koden, versionshanter
 
 [paths.filenames]
 # {}-placeholders ersätts i config.py med värden från TOML
-train_pm25              = "train_{pm25_station}_{train_start}_{train_slut}_{pm25_tidsserie_id}.csv"
-train_vader             = "train_{vaderstation}_{train_start}_{train_slut}_{vaderstation_id}.csv"
-train_merged            = "train_merged.csv"
-train_vader_forskjuten  = "train_vader_forskjuten.csv"
-train_merged_forskjuten = "train_merged_forskjoten.csv"
+train_pm25              = "train_{pm25_station}_{train_start}_{train_slut}_pm25tidsserie_{pm25_tidsserie_id}.csv"
+train_vader             = "train_{vaderstation}_{train_start}_{train_slut}_vaderstationid_{vaderstation_id}.csv"
+train_merged            = "train_merged_{train_start}_{train_slut}_pm25tidsserie_{pm25_tidsserie_id}_vaderstationid_{vaderstation_id}.csv"
+train_vader_forskjuten  = "train_vader_forskjuten_{vaderstation}_{train_start}_{train_slut}_{vaderstation_id}_{horisont}.csv"
+train_merged_forskjuten = "train_merged_forskjuten_{train_start}_{train_slut}_vaderstationid_{vaderstation_id}_pm25tidsserie_{pm25_tidsserie_id}_horisont_{horisont}.csv"
 
 [api]
 luft = "https://datavardluft.smhi.se/52North/api"

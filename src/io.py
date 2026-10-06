@@ -8,7 +8,7 @@ def generate_csv(data, path_and_name_of_csv, index = True):
     try:
         # mode='x' gör att pandas kastar ett FileExistsError om filen redan finns
         data.to_csv(path_and_name_of_csv, mode='x', index=index)
-        print(f"Skapade och fyllde ny fil: {path_and_name_of_csv,}")
+        print(f"Skapade: {path_and_name_of_csv,}")
         
     except FileExistsError:
         # Filen finns redan, vi avbryter tyst
