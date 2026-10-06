@@ -3,7 +3,7 @@ from src.extracting_data import (
     hamta_pm25,
     vader_data
 )
-from src.io import generate_csv, merge_df_and_generate_csv
+from src.io import generate_csv, merge_df_and_generate_csv, forskjut_tid_csv
 from src.config import ProjectConfig
 
 def orchestration(cfg: ProjectConfig):
@@ -13,6 +13,8 @@ def orchestration(cfg: ProjectConfig):
     train_pm25_path = cfg.raw_dir / f"train_{cfg.pm25_station}.csv"
     train_vader_path = cfg.raw_dir / f"train_{cfg.vaderstation}.csv"
     train_merged_path = cfg.merged_dir/ "train_merged.csv"
+    train_vader_forskjuten_path = cfg.raw_dir / "train_vader_forskjuten.csv"
+    train_merged_forskjuten_path = cfg.merged_dir / "train_merged_forskjoten.csv"
     
     # Checka om raw data INTE finns
     # och om de inte finns så startar vi hämtningen av väder och pm2.5 data
@@ -43,6 +45,20 @@ def orchestration(cfg: ProjectConfig):
         merge_df_and_generate_csv(pm_df, vader_df, "tid", train_merged_path, False)
         print(f"Genererat {train_merged_path}")
 
+
+    # Checka om den mergade förskjutna datan INTE finns
+    # och om den ej finns så påbörjas merge mellan förskjuten väderdata och pm2.5 data
+    if not train_merged_forskjuten_path.is_file():
+        print(f"Saknar {train_merged_forskjuten_path}. Mergar direkt!")
+        pm_df = pd.read_csv(train_pm25_path)
+        if not train_vader_forskjuten_path.is_file():
+            forskjut_tid_csv(train_vader_path, train_vader_forskjuten_path, cfg.horisont)
+        vader_forskjuten = pd.read_csv(train_vader_forskjuten_path)
+        merge_df_and_generate_csv(pm_df, vader_forskjuten, "tid", train_merged_forskjuten_path, False)
+        print("Lyckades, alla datafiler finns nu")
+
     else:
         print("Alla datafiler finns")
         
+
+    
