@@ -12,8 +12,12 @@ def till_svensk_tid(ms):
     return tid.tz_convert("Europe/Stockholm")
 
 
-def hamta_pm25(TRAIN_START, TRAIN_SLUT, tidsserie_id, LUFT_API):
-    """Hämtar PM2.5 en månad i taget. Datumen tolkas i svensk tid och slutdatumet ingår."""
+def hamta_pm25(TRAIN_START, TRAIN_SLUT, tidsserie_id, LUFT_API, path_to_potential_csv):
+    """Checkar först om path finns, och om den inte finns -> 
+    Hämtar PM2.5 en månad i taget. Datumen tolkas i svensk tid och slutdatumet ingår."""
+    if path_to_potential_csv.is_file():
+        return pd.read_csv(path_to_potential_csv)
+
     start_tid = pd.Timestamp(TRAIN_START, tz="Europe/Stockholm")
     slut_tid = pd.Timestamp(TRAIN_SLUT, tz="Europe/Stockholm") + pd.Timedelta(days=1) - pd.Timedelta(seconds=1)
 
@@ -39,6 +43,7 @@ def hamta_pm25(TRAIN_START, TRAIN_SLUT, tidsserie_id, LUFT_API):
 
 def hamta_vader_arkiv(parameter, station_id, VADER_API):
     """Hämtar kvalitetskontrollerad arkivdata från SMHI för en parameter."""
+    
     url = f"{VADER_API}/parameter/{parameter}/station/{station_id}/period/corrected-archive/data.csv"
     text = requests.get(url, timeout=120).text
 
@@ -52,8 +57,11 @@ def hamta_vader_arkiv(parameter, station_id, VADER_API):
     return df.set_index("tid")[["varde", "kvalitet"]]
 
 
-def vader_data(parametrar: dict, starttid, sluttid, station_id, VADER_API):
+def vader_data(parametrar: dict, starttid, sluttid, station_id, VADER_API, path_to_potential_csv):
     "Skapar dictionary av väderdata inhämtat via api med våra parametrar"
+    " Checkar först om path_to_potential_csv finns, och om den finns så returneras None"
+    if path_to_potential_csv.is_file():
+        return pd.read_csv(path_to_potential_csv)
 
     vader_delar = {}
     for namn, nummer in parametrar.items():
