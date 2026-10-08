@@ -37,6 +37,14 @@ def hamta_pm25(TRAIN_START, TRAIN_SLUT, tidsserie_id, LUFT_API, path_to_potentia
 
     df = pd.DataFrame(alla_varden)
     df["tid"] = till_svensk_tid(df["timestamp"])
+
+    
+    # Ta bort identiska observationer med samma tidsstämpel och värde
+    df = df.drop_duplicates(subset=["tid", "value"])
+
+    # Behåll endast observationer inom det begärda tidsintervallet
+    df = df[(df["tid"] >= start_tid) & (df["tid"] <= slut_tid)]
+
     return df.set_index("tid")[["value"]].rename(columns={"value": "pm25"})
 
 
