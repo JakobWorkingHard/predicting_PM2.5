@@ -5,6 +5,7 @@ from src.extracting_data import (
 )
 from src.io import generate_csv, merge_df_and_generate_csv, forskjut_tid_csv
 from src.config import ProjectConfig
+from src.validate_process import preprocess_data
 
 def orchestration(cfg: ProjectConfig):
 
@@ -26,10 +27,22 @@ def orchestration(cfg: ProjectConfig):
     # Mergar pm2.5 och väderdata (om mergad csv ej redan finns)
     merge_df_and_generate_csv(cfg.train_pm25, cfg.train_vader, "tid", cfg.train_merged, False)
 
+    # Preprocessa den sammanfogade träningsdatan
+    merged_df = pd.read_csv(cfg.train_merged)
+
+    processed_df = preprocess_data(merged_df)
+
+    # Spara den bearbetade datan
+    if not cfg.train_processed.is_file():
+        cfg.processed_dir.mkdir(parents=True, exist_ok=True)
+        processed_df.to_csv(cfg.train_processed, index=False)
+
+
     # Förskjuter tidsserien med horisont om förskjuten tidsserie ej redan finns
     forskjut_tid_csv(cfg.train_vader, cfg.train_vader_forskjuten, cfg.horisont)
     # Mergar pm2.5 och Förskjuten väderdata (om mergad  csv ej redan finns)
     merge_df_and_generate_csv(cfg.train_pm25, cfg.train_vader_forskjuten, "tid", cfg.train_merged_forskjuten, False)
-        
+
+    
 
     
