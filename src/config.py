@@ -16,6 +16,7 @@ class ProjectConfig:
     train_merged: Path
     train_vader_forskjuten: Path
     train_merged_forskjuten: Path
+    train_processed: Path
 
     # API:er
     luft_api: str
@@ -92,6 +93,7 @@ def load_config(PATH_CONFIG_TOML: Path, PATH_PROJECT_ROOT: Path ) -> ProjectConf
         train_merged=merged_dir / fn["train_merged"].format(**fmt),
         train_vader_forskjuten=raw_dir / fn["train_vader_forskjuten"].format(**fmt),
         train_merged_forskjuten=merged_dir / fn["train_merged_forskjuten"].format(**fmt),
+        train_processed=processed_dir / fn["train_processed"].format(**fmt),    
 
         # API:er
         luft_api=api["luft"],
