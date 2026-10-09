@@ -4,7 +4,9 @@
 # Anges som relativa sökvägar från projektets rot
 raw_dir = "data/raw"              # rådata från API:erna, versionshanteras
 merged_dir = "data/merged"        # Mergad raw data
+validated_dir = "data/validated"  # validerad data, inte interpolerad
 processed_dir = "data/processed"  # rensad data, skapas av koden, versionshanteras inte
+
 
 [paths.filenames]
 # {}-placeholders ersätts i config.py med värden från TOML
@@ -13,6 +15,7 @@ train_vader             = "train_{vaderstation}_{train_start}_{train_slut}_vader
 train_merged            = "train_merged_{train_start}_{train_slut}_pm25tidsserie_{pm25_tidsserie_id}_vaderstationid_{vaderstation_id}.csv"
 train_vader_forskjuten  = "train_vader_forskjuten_{vaderstation}_{train_start}_{train_slut}_{vaderstation_id}_{horisont}.csv"
 train_merged_forskjuten = "train_merged_forskjuten_{train_start}_{train_slut}_vaderstationid_{vaderstation_id}_pm25tidsserie_{pm25_tidsserie_id}_horisont_{horisont}.csv"
+train_validated         = "train_validated_{train_start}_{train_slut}.csv"
 train_processed         = "train_processed_{train_start}_{train_slut}.csv"
 
 [api]
