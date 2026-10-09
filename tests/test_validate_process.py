@@ -11,6 +11,7 @@ from src.validate_process import (
     interpolate_short_gaps,
     interpolate_wind_direction,
     fill_short_rain_gaps,
+    validate_data,
     preprocess_data,
 )
 
@@ -214,6 +215,53 @@ def test_fill_short_rain_gaps():
     assert result.loc[7:10, "Nederbördsmängd"].isna().all()
 
 
+
+def test_validate_data():
+    df = pd.DataFrame({
+        "tid": [
+            "2026-01-01 02:00:00+01:00",
+            "2026-01-01 00:00:00+01:00",
+        ],
+        "pm25": [12.0, 10.0],
+        "Lufttemperatur": [7.0, 5.0],
+        "Vindriktning": [10.0, 350.0],
+        "Vindhastighet": [4.0, 2.0],
+        "Relativ luftfuktighet": [72.0, 70.0],
+        "Nederbördsmängd": [0.0, 0.0],
+    })
+
+    result = validate_data(df)
+
+    # Tiden ska vara svensk och sorterad
+    assert str(result["tid"].dt.tz) == "Europe/Stockholm"
+    assert result["tid"].is_monotonic_increasing
+
+    # Den saknade timmen ska läggas till
+    assert len(result) == 3
+    assert result["tid"].duplicated().sum() == 0
+
+    # Validering får inte interpolera saknade värden
+    assert pd.isna(result.loc[1, "pm25"])
+    assert pd.isna(result.loc[1, "Lufttemperatur"])
+    assert pd.isna(result.loc[1, "Vindriktning"])
+
+    # Ursprungliga mätvärden ska behållas
+    assert result.loc[0, "pm25"] == 10.0
+    assert result.loc[2, "pm25"] == 12.0
+
+
+def test_validate_data_raises_on_duplicates():
+    df = pd.DataFrame({
+        "tid": [
+            "2026-01-01 00:00:00+01:00",
+            "2026-01-01 00:00:00+01:00",
+        ]
+    })
+
+    with pytest.raises(ValueError, match="dubbla tidsstämplar"):
+        validate_data(df)
+
+
 def test_preprocess_data():
     df = pd.DataFrame({
         "tid": pd.date_range(
@@ -272,7 +320,8 @@ def test_preprocess_data():
         ]
     })
 
-    result = preprocess_data(df)
+    validated_df = validate_data(df)
+    result = preprocess_data(validated_df)
 
     # Tid ska vara timezone-aware och konverterad till svensk tid
     assert str(result["tid"].dt.tz) == "Europe/Stockholm"

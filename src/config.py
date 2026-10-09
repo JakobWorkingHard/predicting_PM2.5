@@ -8,6 +8,7 @@ class ProjectConfig:
     # Mappar
     raw_dir: Path
     merged_dir: Path
+    validated_dir: Path
     processed_dir: Path
 
     # Fullständiga sökvägar till specifika filer
@@ -16,6 +17,7 @@ class ProjectConfig:
     train_merged: Path
     train_vader_forskjuten: Path
     train_merged_forskjuten: Path
+    train_validated: Path
     train_processed: Path
 
     # API:er
@@ -60,6 +62,7 @@ def load_config(PATH_CONFIG_TOML: Path, PATH_PROJECT_ROOT: Path ) -> ProjectConf
     # Baskataloger
     raw_dir = PATH_PROJECT_ROOT / p["raw_dir"]
     merged_dir = PATH_PROJECT_ROOT / p["merged_dir"]
+    validated_dir = PATH_PROJECT_ROOT / p["validated_dir"]                      
     processed_dir = PATH_PROJECT_ROOT / p["processed_dir"]
 
     # Råvärden
@@ -85,6 +88,7 @@ def load_config(PATH_CONFIG_TOML: Path, PATH_PROJECT_ROOT: Path ) -> ProjectConf
         # Mappar
         raw_dir=raw_dir,
         merged_dir=merged_dir,
+        validated_dir=validated_dir,
         processed_dir=processed_dir,
 
         # Fullständiga sökvägar (mall + baskatalog)
@@ -93,8 +97,9 @@ def load_config(PATH_CONFIG_TOML: Path, PATH_PROJECT_ROOT: Path ) -> ProjectConf
         train_merged=merged_dir / fn["train_merged"].format(**fmt),
         train_vader_forskjuten=raw_dir / fn["train_vader_forskjuten"].format(**fmt),
         train_merged_forskjuten=merged_dir / fn["train_merged_forskjuten"].format(**fmt),
-        train_processed=processed_dir / fn["train_processed"].format(**fmt),    
-
+        train_validated=validated_dir / fn["train_validated"].format(**fmt),
+        train_processed=processed_dir / fn["train_processed"].format(**fmt),
+        
         # API:er
         luft_api=api["luft"],
         vader_api=api["vader"],

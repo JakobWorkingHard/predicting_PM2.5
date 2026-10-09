@@ -255,19 +255,30 @@ def fill_short_rain_gaps(
     return df
 
 
-def preprocess_data(df: pd.DataFrame) -> pd.DataFrame:
-    """Preprocessar data inför vidare analys och modellering."""
+
+def validate_data(df: pd.DataFrame) -> pd.DataFrame:
+    """Validerar tidsserie och mätvärden utan interpolation."""
 
     df = convert_datetime(df)
     df = sort_by_time(df)
 
-    # Tidsstämplarna måste vara unika innan en komplett timaxel skapas
+    # Kontrollera att tidsstämplarna är unika
     check_duplicates(df)
 
+    # Säkerställ en komplett timaxel
     df = ensure_complete_timeline(df)
 
-    # Uppenbart ogiltiga mätvärden behandlas som saknade värden
+    # Ersätt ogiltiga mätvärden med NaN
     df = replace_invalid_values(df)
+
+    return df
+
+
+
+def preprocess_data(df: pd.DataFrame) -> pd.DataFrame:
+    """Interpolerar korta luckor i validerad data för historisk analys."""
+
+    df = df.copy()
 
     # Linjär interpolation av korta luckor
     linear_columns = [
@@ -284,8 +295,8 @@ def preprocess_data(df: pd.DataFrame) -> pd.DataFrame:
     df = interpolate_wind_direction(df)
     df = fill_short_rain_gaps(df)
 
-
     return df
+
 
 if __name__ == "__main__":
     from pathlib import Path
