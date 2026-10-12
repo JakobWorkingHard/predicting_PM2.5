@@ -20,6 +20,13 @@ class ProjectConfig:
     train_validated: Path
     train_processed: Path
 
+    # Valideringsdata
+    val_pm25: Path
+    val_vader: Path
+    val_merged: Path
+
+
+
     # API:er
     luft_api: str
     vader_api: str
@@ -72,6 +79,9 @@ def load_config(PATH_CONFIG_TOML: Path, PATH_PROJECT_ROOT: Path ) -> ProjectConf
     train_slut = t["train_slut"]
     pm25_tidsserie_id = pm25["tidsserie_id"]
     vaderstation_id = vader["id"]
+    validering_start = t["validering_start"]
+    validering_slut = t["validering_slut"]  
+    
 
     # Värden för filnamnsmallar (stationsnamn sanerade, övriga oförändrade)
     fmt = {
@@ -82,6 +92,8 @@ def load_config(PATH_CONFIG_TOML: Path, PATH_PROJECT_ROOT: Path ) -> ProjectConf
         "pm25_tidsserie_id": pm25_tidsserie_id,
         "vaderstation_id": vaderstation_id,
         "horisont": mod["horisont"],
+        "validering_start": validering_start,
+        "validering_slut": validering_slut,
     }
 
     return ProjectConfig(
@@ -91,7 +103,7 @@ def load_config(PATH_CONFIG_TOML: Path, PATH_PROJECT_ROOT: Path ) -> ProjectConf
         validated_dir=validated_dir,
         processed_dir=processed_dir,
 
-        # Fullständiga sökvägar (mall + baskatalog)
+        # Fullständiga sökvägar till träningsdata
         train_pm25=raw_dir / fn["train_pm25"].format(**fmt),
         train_vader=raw_dir / fn["train_vader"].format(**fmt),
         train_merged=merged_dir / fn["train_merged"].format(**fmt),
@@ -99,7 +111,12 @@ def load_config(PATH_CONFIG_TOML: Path, PATH_PROJECT_ROOT: Path ) -> ProjectConf
         train_merged_forskjuten=merged_dir / fn["train_merged_forskjuten"].format(**fmt),
         train_validated=validated_dir / fn["train_validated"].format(**fmt),
         train_processed=processed_dir / fn["train_processed"].format(**fmt),
-        
+
+        # Fullständiga sökvägar till valideringsdata
+        val_pm25=raw_dir / fn["val_pm25"].format(**fmt),
+        val_vader=raw_dir / fn["val_vader"].format(**fmt),
+        val_merged=merged_dir / fn["val_merged"].format(**fmt),
+
         # API:er
         luft_api=api["luft"],
         vader_api=api["vader"],

@@ -7,10 +7,17 @@ from src.io import generate_csv, merge_df_and_generate_csv, forskjut_tid_csv
 from src.config import ProjectConfig
 from src.validate_process import validate_data
 
+
 def orchestration(cfg: ProjectConfig):
 
     # Hämtar pm träningsdata alt. genererar en df om csv redan finns
-    train_pm_data = hamta_pm25(cfg.train_start, cfg.train_slut, cfg.pm25_tidsserie_id, cfg.luft_api, cfg.train_pm25)
+    train_pm_data = hamta_pm25(
+        cfg.train_start,
+        cfg.train_slut,
+        cfg.pm25_tidsserie_id,
+        cfg.luft_api,
+        cfg.train_pm25
+    )
     generate_csv(train_pm_data, cfg.train_pm25)
 
     # Hämtar väderdata alt. genererar df om csv redan finns
@@ -21,13 +28,47 @@ def orchestration(cfg: ProjectConfig):
         cfg.vaderstation_id,
         cfg.vader_api,
         cfg.train_vader
-        )
+    )
     generate_csv(train_vader_data, cfg.train_vader)
 
     # Mergar pm2.5 och väderdata (om mergad csv ej redan finns)
-    merge_df_and_generate_csv(cfg.train_pm25, cfg.train_vader, "tid", cfg.train_merged, False)
+    merge_df_and_generate_csv(
+        cfg.train_pm25,
+        cfg.train_vader,
+        "tid",
+        cfg.train_merged,
+        False
+    )
 
-    # LÄGG IN HÄR
+    # Hämtar PM2.5-data för valideringsperioden
+    val_pm_data = hamta_pm25(
+        cfg.validering_start,
+        cfg.validering_slut,
+        cfg.pm25_tidsserie_id,
+        cfg.luft_api,
+        cfg.val_pm25
+    )
+    generate_csv(val_pm_data, cfg.val_pm25)
+
+    # Hämtar väderdata för valideringsperioden
+    val_vader_data = vader_data(
+        cfg.vader_parametrar,
+        cfg.validering_start,
+        cfg.validering_slut,
+        cfg.vaderstation_id,
+        cfg.vader_api,
+        cfg.val_vader
+    )
+    generate_csv(val_vader_data, cfg.val_vader)
+
+    # Mergar PM2.5- och väderdata för valideringsperioden
+    merge_df_and_generate_csv(
+        cfg.val_pm25,
+        cfg.val_vader,
+        "tid",
+        cfg.val_merged,
+        False
+    )
 
     # Validera den sammanfogade träningsdatan utan interpolation
     merged_df = pd.read_csv(cfg.train_merged)
@@ -38,12 +79,18 @@ def orchestration(cfg: ProjectConfig):
     cfg.validated_dir.mkdir(parents=True, exist_ok=True)
     validated_df.to_csv(cfg.train_validated, index=False)
 
-
     # Förskjuter tidsserien med horisont om förskjuten tidsserie ej redan finns
-    forskjut_tid_csv(cfg.train_vader, cfg.train_vader_forskjuten, cfg.horisont)
-    # Mergar pm2.5 och Förskjuten väderdata (om mergad  csv ej redan finns)
-    merge_df_and_generate_csv(cfg.train_pm25, cfg.train_vader_forskjuten, "tid", cfg.train_merged_forskjuten, False)
+    forskjut_tid_csv(
+        cfg.train_vader,
+        cfg.train_vader_forskjuten,
+        cfg.horisont
+    )
 
-    
-
-    
+    # Mergar pm2.5 och förskjuten väderdata (om mergad csv ej redan finns)
+    merge_df_and_generate_csv(
+        cfg.train_pm25,
+        cfg.train_vader_forskjuten,
+        "tid",
+        cfg.train_merged_forskjuten,
+        False
+    )
