@@ -18,6 +18,10 @@ train_merged_forskjuten = "train_merged_forskjuten_{train_start}_{train_slut}_va
 train_validated         = "train_validated_{train_start}_{train_slut}.csv"
 train_processed         = "train_processed_{train_start}_{train_slut}.csv"
 
+val_pm25 = "val_{pm25_station}_{validering_start}_{validering_slut}_pm25tidsserie_{pm25_tidsserie_id}.csv"
+val_vader = "val_{vaderstation}_{validering_start}_{validering_slut}_vaderstationid_{vaderstation_id}.csv"
+val_merged = "val_merged_{validering_start}_{validering_slut}_pm25tidsserie_{pm25_tidsserie_id}_vaderstationid_{vaderstation_id}.csv"
+
 [api]
 luft = "https://datavardluft.smhi.se/52North/api"
 vader = "https://opendata-download-metobs.smhi.se/api/version/1.0"
