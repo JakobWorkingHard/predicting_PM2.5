@@ -118,8 +118,7 @@ Målvariabeln är PM2.5-halten sex timmar senare. Som features används PM2.5, l
 
 - **Preliminär data:** de senaste mätvärdena från båda API:erna är okontrollerade realtidsdata som kan ändras eller underkännas i efterhand.
 - **Nederbörd saknas i hela dygnsblock:** luckorna börjar och slutar ofta vid samma klockslag, vilket tyder på att hela mätdygn har underkänts i SMHI:s kvalitetskontroll.
-- **Vintertid i den sammanslagna filen:** när filerna slås ihop är tidsstämpeln text, och raderna sorteras i bokstavsordning. Vid omställningen till vintertid hamnar därför de två timmarna 02:00 i fel ordning, vilket ger fel mål på 12 rader om den sammanslagna filen används direkt. Den validerade filen sorteras på riktig tid och har inte det problemet.
-- **Vindriktning 0° och 360°:** i SMHI:s data betyder 0° vindstilla och 360° vind rakt norrifrån. Valideringen gör om 360° till 0°, så efter valideringen går nordlig vind och vindstilla bara att skilja åt på vindhastigheten.
+
 
 ## Begränsningar
 
