@@ -1,4 +1,7 @@
 import pandas as pd
+import joblib
+import json
+from pathlib import Path
 
 
 def generate_csv(data, path_and_name_of_csv, index = True):
@@ -41,4 +44,53 @@ def forskjut_tid_csv(input_path, output_path, hours=-6):
           + pd.Timedelta(hours=hours)
     )
     df.set_index("tid").to_csv(output_path, index=True)
+
+
+def save_champion_model(
+    model,
+    model_name,
+    best_row,
+    models_dir,
+    random_state,
+    metric,
+):
+    """
+    Sparar den vinnande modellen och en JSON-fil med metadata.
+
+    Parametrar
+    ----------
+    model : estimator
+        Den tränade och fit:ade modellen.
+    model_name : str
+        Namn på modellen, t.ex. "Linear Regression".
+    best_row : pd.Series
+        Raden för vinnaren från results_df (innehåller alla metriker).
+    models_dir : Path
+        Mapp där modellen ska sparas. Skapas om den inte finns.
+    random_state : int
+        Frö som användes vid träning.
+    metric : str
+        Metrikk som avgjorde valet, t.ex. "Validation MAE".
+    """
+    models_dir = Path(models_dir)
+    models_dir.mkdir(parents=True, exist_ok=True)
+
+    safe_name = model_name.replace(" ", "_").lower()
+    model_path = models_dir / f"{safe_name}.joblib"
+    meta_path = models_dir / f"{safe_name}_{metric}.json"
+
+    joblib.dump(model, model_path)
+    print(f"Sparade modell: {model_path}")
+
+    meta = {
+        "model_name": model_name,
+        "model_file": str(model_path),
+        "random_state": random_state,
+        "selection_metric": metric,
+        "metrics": best_row.to_dict(),
+    }
+
+    with open(meta_path, "w", encoding="utf-8") as f:
+        json.dump(meta, f, indent=2, ensure_ascii=False)
+    print(f"Sparade metadata: {meta_path}")
 

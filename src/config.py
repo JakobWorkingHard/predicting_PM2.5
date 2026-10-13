@@ -10,6 +10,7 @@ class ProjectConfig:
     merged_dir: Path
     validated_dir: Path
     processed_dir: Path
+    models_dir: Path
 
     # Fullständiga sökvägar till specifika filer
     train_pm25: Path
@@ -24,8 +25,8 @@ class ProjectConfig:
     val_pm25: Path
     val_vader: Path
     val_merged: Path
-
-
+    val_validated: Path
+    val_processed: Path
 
     # API:er
     luft_api: str
@@ -33,6 +34,10 @@ class ProjectConfig:
 
     # Modell
     horisont: int
+    features: list
+    selection_metric: str
+    random_state: int
+    target_column: str
 
     # Tidsperioder
     train_start: str
@@ -71,6 +76,7 @@ def load_config(PATH_CONFIG_TOML: Path, PATH_PROJECT_ROOT: Path ) -> ProjectConf
     merged_dir = PATH_PROJECT_ROOT / p["merged_dir"]
     validated_dir = PATH_PROJECT_ROOT / p["validated_dir"]                      
     processed_dir = PATH_PROJECT_ROOT / p["processed_dir"]
+    models_dir=PATH_PROJECT_ROOT / p["models_dir"]
 
     # Råvärden
     pm25_station = pm25["namn"]
@@ -102,6 +108,7 @@ def load_config(PATH_CONFIG_TOML: Path, PATH_PROJECT_ROOT: Path ) -> ProjectConf
         merged_dir=merged_dir,
         validated_dir=validated_dir,
         processed_dir=processed_dir,
+        models_dir = models_dir,
 
         # Fullständiga sökvägar till träningsdata
         train_pm25=raw_dir / fn["train_pm25"].format(**fmt),
@@ -116,6 +123,8 @@ def load_config(PATH_CONFIG_TOML: Path, PATH_PROJECT_ROOT: Path ) -> ProjectConf
         val_pm25=raw_dir / fn["val_pm25"].format(**fmt),
         val_vader=raw_dir / fn["val_vader"].format(**fmt),
         val_merged=merged_dir / fn["val_merged"].format(**fmt),
+        val_validated=validated_dir / fn["val_validated"].format(**fmt),
+        val_processed=processed_dir / fn["val_processed"].format(**fmt),
 
         # API:er
         luft_api=api["luft"],
@@ -123,6 +132,10 @@ def load_config(PATH_CONFIG_TOML: Path, PATH_PROJECT_ROOT: Path ) -> ProjectConf
 
         # Modell
         horisont=mod["horisont"],
+        features=mod["features"]["columns"],
+        selection_metric=mod["selection_metric"],
+        random_state=mod["random_state"],
+        target_column=mod["target_column"],
 
         # Tidsperioder
         train_start=train_start,

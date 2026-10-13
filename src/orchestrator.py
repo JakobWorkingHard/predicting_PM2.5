@@ -3,24 +3,35 @@ from src.extracting_data import (
     hamta_pm25,
     vader_data
 )
-from src.io import generate_csv, merge_df_and_generate_csv, forskjut_tid_csv
+from src.io import generate_csv, merge_df_and_generate_csv, forskjut_tid_csv, save_champion_model
 from src.config import ProjectConfig
 from src.validate_process import validate_data
+from src.features import add_wind_features, add_time_features
+from src.train_models import (
+    load_train_val_data,
+    build_model_registry,
+    train_and_evaluate_models,
+    persistence_baseline,
+)
+from src.metrics import select_best_model, build_comparison_table, display_df
+
 
 
 def orchestration(cfg: ProjectConfig):
 
-    # Hämtar pm träningsdata alt. genererar en df om csv redan finns
+    # = 1 TRÄNINGSDATA: Hämtar, validerar och transformerar
+
+    #   ==-- 1A Hämtar pm2.5 träningsdata alt. genererar en df om csv redan finns
     train_pm_data = hamta_pm25(
         cfg.train_start,
         cfg.train_slut,
         cfg.pm25_tidsserie_id,
         cfg.luft_api,
-        cfg.train_pm25
+        cfg.train_pm25,
     )
     generate_csv(train_pm_data, cfg.train_pm25)
 
-    # Hämtar väderdata alt. genererar df om csv redan finns
+    #    ==-- 1B Hämtar tränings-väderdata alt. genererar df om csv redan finns
     train_vader_data = vader_data(
         cfg.vader_parametrar,
         cfg.train_start,
@@ -31,7 +42,7 @@ def orchestration(cfg: ProjectConfig):
     )
     generate_csv(train_vader_data, cfg.train_vader)
 
-    # Mergar pm2.5 och väderdata (om mergad csv ej redan finns)
+    #    ==-- 1C Mergar träningsdata pm2.5 och väderdata (om mergad csv ej redan finns)
     merge_df_and_generate_csv(
         cfg.train_pm25,
         cfg.train_vader,
@@ -40,7 +51,9 @@ def orchestration(cfg: ProjectConfig):
         False
     )
 
-    # Hämtar PM2.5-data för valideringsperioden
+    # = 2 VALIDERINGSDATA: Hämtar, validerar och transformerar
+
+    #   ==-- 2A Hämtar pm2.5 valideringsdata alt. genererar en df om csv redan finns
     val_pm_data = hamta_pm25(
         cfg.validering_start,
         cfg.validering_slut,
@@ -50,7 +63,7 @@ def orchestration(cfg: ProjectConfig):
     )
     generate_csv(val_pm_data, cfg.val_pm25)
 
-    # Hämtar väderdata för valideringsperioden
+    #   ==-- 2B Hämtar validerings-väderdata alt. genererar df om csv redan finns
     val_vader_data = vader_data(
         cfg.vader_parametrar,
         cfg.validering_start,
@@ -61,7 +74,7 @@ def orchestration(cfg: ProjectConfig):
     )
     generate_csv(val_vader_data, cfg.val_vader)
 
-    # Mergar PM2.5- och väderdata för valideringsperioden
+    #    ==-- 2C Mergar valideringsdata pm2.5 och väderdata (om mergad csv ej redan finns)
     merge_df_and_generate_csv(
         cfg.val_pm25,
         cfg.val_vader,
@@ -70,27 +83,84 @@ def orchestration(cfg: ProjectConfig):
         False
     )
 
-    # Validera den sammanfogade träningsdatan utan interpolation
-    merged_df = pd.read_csv(cfg.train_merged)
+    # = 3 VALIDERAR, TRANSFORMERAR OCH SPARAR TRÄNINGSDATA OCH VALIDERINGSDATA
 
-    validated_df = validate_data(merged_df)
+    #    ==-- 3A Läser in mergad data
+    train_merged_df = pd.read_csv(cfg.train_merged)
+    val_merged_df = pd.read_csv(cfg.val_merged)
 
-    # Spara den validerade datan
-    cfg.validated_dir.mkdir(parents=True, exist_ok=True)
-    validated_df.to_csv(cfg.train_validated, index=False)
+    #    ==--3B Validerar, transformerar och sparar processad data
+    merged_data = {
+        cfg.train_processed: train_merged_df,
+        cfg.val_processed: val_merged_df
+    }
 
-    # Förskjuter tidsserien med horisont om förskjuten tidsserie ej redan finns
-    forskjut_tid_csv(
-        cfg.train_vader,
-        cfg.train_vader_forskjuten,
-        cfg.horisont
+    for key, value in merged_data.items():
+        df = validate_data(value)
+        df = add_wind_features(df)
+        df = add_time_features(df, cfg.horisont)
+        df[cfg.target_column] = df["pm25"].shift(-cfg.horisont)
+        df = df.dropna()
+        cfg.processed_dir.mkdir(parents=True, exist_ok=True)
+        generate_csv(df, key, index=False)
+
+    # = 4 TRÄNAR MODELLER
+
+    #   ==-- 4A Delar upp träningsdata och valideringsdata i X och y
+    X_train, y_train, X_val, y_val = load_train_val_data(
+        cfg.train_processed,
+        cfg.val_processed,
+        cfg.features,
+        cfg.target_column,
     )
 
-    # Mergar pm2.5 och förskjuten väderdata (om mergad csv ej redan finns)
-    merge_df_and_generate_csv(
-        cfg.train_pm25,
-        cfg.train_vader_forskjuten,
-        "tid",
-        cfg.train_merged_forskjuten,
-        False
+    #   ==-- 4B Hämtar alla våra valda modeller
+    all_models = build_model_registry(cfg.random_state)
+
+    #   ==-- 4C Låter våra modeller möta varann
+    results_df, trained_models = train_and_evaluate_models(
+        all_models,
+        X_train,
+        y_train,
+        X_val,
+        y_val,
     )
+    results_df = results_df.sort_values(by=cfg.selection_metric)
+    display_df(results_df)
+
+    #   ==-- 4D Skapar vår baseline
+    baseline_train, baseline_val = persistence_baseline(
+        X_train, y_train, X_val, y_val
+    )
+
+    #   ==-- 4E Champion vs baseline - bygg först, välj sen
+    comparison_df = build_comparison_table(results_df, baseline_val, cfg.selection_metric)
+    comparison_df = comparison_df.sort_values(by=cfg.selection_metric)
+    display_df(comparison_df)
+
+    #   ==-- 4F Välj vinnare bland modeller OCH baseline
+    best_name, best_row = select_best_model(
+        comparison_df, metric=cfg.selection_metric
+    )
+
+    if best_name == "Persistence Baseline":
+        print("Ingen modell slog baseline - sparar ingen champion.")
+        champion_row = best_row
+    else:
+        # Hämta fullständig rad från results_df för metadata
+        full_row = results_df[results_df["Modell"] == best_name].iloc[0]
+        champion_row = full_row
+        save_champion_model(
+            model=trained_models[best_name],
+            model_name=best_name,
+            best_row=full_row,
+            models_dir=cfg.models_dir,
+            random_state=cfg.random_state,
+            metric=cfg.selection_metric,
+        )
+    champion_df = champion_row.to_frame().T
+    print(f"\nVinnare: {best_name}")
+    display_df(champion_df)
+
+
+
