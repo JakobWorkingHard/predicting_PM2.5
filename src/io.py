@@ -2,6 +2,7 @@ import pandas as pd
 import joblib
 import json
 from pathlib import Path
+from datetime import datetime, timedelta
 
 
 def generate_csv(data, path_and_name_of_csv, index = True):
@@ -75,9 +76,10 @@ def save_champion_model(
     models_dir = Path(models_dir)
     models_dir.mkdir(parents=True, exist_ok=True)
 
+    timestamp = datetime.now().strftime("%Y_%m_%d_%H-%M")
     safe_name = model_name.replace(" ", "_").lower()
-    model_path = models_dir / f"{safe_name}.joblib"
-    meta_path = models_dir / f"{safe_name}_{metric}.json"
+    model_path = models_dir / f"{safe_name}_{metric.replace(' ','_').replace("²", "2")}_{timestamp}.joblib"
+    meta_path = models_dir / f"{safe_name}_{metric.replace(' ','_').replace('²', '2')}_{timestamp}.json"
 
     joblib.dump(model, model_path)
     print(f"Sparade modell: {model_path}")
@@ -93,4 +95,80 @@ def save_champion_model(
     with open(meta_path, "w", encoding="utf-8") as f:
         json.dump(meta, f, indent=2, ensure_ascii=False)
     print(f"Sparade metadata: {meta_path}")
+
+
+def append_champion_log(log_path, model_name, metric, score):
+    """
+    Appendar en rad med vinnande modell, timestamp, metric och score
+    till champion-loggen (CSV). Skapar filen med rubrikrad om den saknas.
+
+    Parametrar
+    ----------
+    log_path : Path
+        Sökväg till loggfilen, t.ex. "models/champion_log.csv".
+    model_name : str
+        Namn på vinnaren, t.ex. "Linear Regression" eller
+        "Persistence Baseline" (om baslinjen vann räknas det som en giltig
+        körning och loggas därmed också).
+    metric : str
+        Metrik som avgjorde valet, t.ex. "Validation R²".
+    score : float
+        Vinnarens värde på metricken.
+    """
+    log_path = Path(log_path)
+    log_path.parent.mkdir(parents=True, exist_ok=True)
+
+    timestamp = datetime.now().isoformat()
+    rad = pd.DataFrame(
+        [
+            {
+                "modell": model_name,
+                "timestamp": timestamp,
+                "metric": metric,
+                "score": score,
+            }
+        ]
+    )
+
+    # rubrik behövs bara om filen inte finns än
+    header = not log_path.is_file()
+    rad.to_csv(log_path, mode="a", header=header, index=False)
+    print(f"Loggade champion i: {log_path} ({model_name}, {timestamp})")
+
+
+def champion_is_fresh(log_path, antal_dagar) -> bool:
+    """
+    Avgör om senaste champion-loggningen är gjord inom de senaste
+    'antal_dagar' dagarna.
+
+    Returnerar True om champion är färsk (orskestratorns steg 4 kan skippas),
+    False annars. Fail-safe: om filen saknas, är tom eller innehåller en
+    ogiltig timestamp returneras False, så att en full träning tvingas fram.
+
+    Parametrar
+    ----------
+    log_path : Path
+        Sökväg till loggfilen, t.ex. "models/champion_log.csv".
+    antal_dagar : int
+        Maximal ålder i dagar för att champion ska räknas som färsk.
+    """
+    log_path = Path(log_path)
+    if not log_path.is_file():
+        return False
+
+    try:
+        log_df = pd.read_csv(log_path)
+        if log_df.empty or "timestamp" not in log_df.columns:
+            return False
+
+        senaste_timestamp = pd.to_datetime(log_df["timestamp"].iloc[-1])
+        if pd.isna(senaste_timestamp):
+            return False
+
+        alder = datetime.now() - senaste_timestamp.to_pydatetime()
+        return alder <= timedelta(days=antal_dagar)
+
+    except Exception as e:
+        print(f"Varning: kunde inte läsa {log_path} ({e}) - kör full träning.")
+        return False
 

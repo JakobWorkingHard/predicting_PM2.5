@@ -3,7 +3,14 @@ from src.extracting_data import (
     hamta_pm25,
     vader_data
 )
-from src.io import generate_csv, merge_df_and_generate_csv, forskjut_tid_csv, save_champion_model
+from src.io import (
+    generate_csv,
+    merge_df_and_generate_csv,
+    forskjut_tid_csv,
+    save_champion_model,
+    append_champion_log,
+    champion_is_fresh,
+)
 from src.config import ProjectConfig
 from src.validate_process import validate_data
 from src.features import add_wind_features, add_time_features
@@ -104,6 +111,15 @@ def orchestration(cfg: ProjectConfig):
         cfg.processed_dir.mkdir(parents=True, exist_ok=True)
         generate_csv(df, key, index=False)
 
+    # = 3C CHAMPION-CHECK: hoppa över träning om champion tränats nyligen
+
+    if champion_is_fresh(cfg.champion_log, cfg.antal_dagar_sedan):
+        print(
+            f"Champion tränad inom de senaste {cfg.antal_dagar_sedan} dagarna - "
+            "hoppar över steg 4 (träning och modellval)."
+        )
+        return
+
     # = 4 TRÄNAR MODELLER
 
     #   ==-- 4A Delar upp träningsdata och valideringsdata i X och y
@@ -161,6 +177,14 @@ def orchestration(cfg: ProjectConfig):
     champion_df = champion_row.to_frame().T
     print(f"\nVinnare: {best_name}")
     display_df(champion_df)
+
+    # = 4G Logga vinnaren (även Persistence Baseline räknas som en giltig körning)
+    append_champion_log(
+        log_path=cfg.champion_log,
+        model_name=best_name,
+        metric=cfg.selection_metric,
+        score=champion_row[cfg.selection_metric],
+    )
 
 
 

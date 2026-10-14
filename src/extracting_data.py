@@ -49,15 +49,26 @@ def hamta_pm25(TRAIN_START, TRAIN_SLUT, tidsserie_id, LUFT_API, csv_path):
     return df.set_index("tid")[["value"]].rename(columns={"value": "pm25"})
 
 
-
-def hamta_vader_arkiv(parameter, station_id, VADER_API, csv_path):
-    """Hämtar kvalitetskontrollerad arkivdata från SMHI för en parameter.
-    Om csv_path redan finns returneras df direkt från filen."""
-    if os.path.exists(csv_path):
+def hamta_vader(parameter, station_id, VADER_API, csv_path, period="corrected-archive"):
+    """
+    Hämtar väderdata från SMHI.
+    
+    Parametrar
+    ----------
+    period : str
+        Vilken tidsperiod som ska hämtas. Giltiga val:
+        'corrected-archive', 'latest-months', 'latest-day', 'latest-hour'
+    """
+    
+    # Använd bara den sparade filen om vi ber om det fasta arkivet
+    # (Vill vi ha "latest-day" vill vi ju faktiskt hämta den senaste datan varje gång)
+    if period == "corrected-archive" and os.path.exists(csv_path):
         print(f"Läser väderdata från befintlig fil: {csv_path}")
         return pd.read_csv(csv_path, index_col="tid", parse_dates=True)
 
-    url = f"{VADER_API}/parameter/{parameter}/station/{station_id}/period/corrected-archive/data.csv"
+    # Använd variabeln {period} i URL 
+    url = f"{VADER_API}/parameter/{parameter}/station/{station_id}/period/{period}/data.csv"
+    
     try:
         text = requests.get(url, timeout=120).text
     except requests.exceptions.RequestException as e:
@@ -75,7 +86,13 @@ def hamta_vader_arkiv(parameter, station_id, VADER_API, csv_path):
         df.columns = ["datum", "tid_utc", "varde", "kvalitet"]
 
         df["tid"] = pd.to_datetime(df["datum"] + " " + df["tid_utc"], utc=True).dt.tz_convert("Europe/Stockholm")
-        return df.set_index("tid")[["varde", "kvalitet"]]
+        df = df.set_index("tid")[["varde", "kvalitet"]]
+        
+        # Spara den nedladdade datan till csv_path om du vill spara även ny data
+        df.to_csv(csv_path)
+        
+        return df
+        
     except StopIteration:
         print(f"Kunde inte hitta tabellstart ('Datum') i svaret för parameter {parameter}")
         raise
@@ -83,12 +100,6 @@ def hamta_vader_arkiv(parameter, station_id, VADER_API, csv_path):
         print(f"Fel vid tolkning av väderdata för parameter {parameter}: {e}")
         raise
 
-
-import os
-import time
-import pandas as pd
-import requests
-import io
 
 
 def vader_data(parametrar, starttid, sluttid, station_id, VADER_API, csv_path):

@@ -11,6 +11,7 @@ class ProjectConfig:
     validated_dir: Path
     processed_dir: Path
     models_dir: Path
+    champion_log: Path
 
     # Fullständiga sökvägar till specifika filer
     train_pm25: Path
@@ -38,6 +39,7 @@ class ProjectConfig:
     selection_metric: str
     random_state: int
     target_column: str
+    antal_dagar_sedan: int
 
     # Tidsperioder
     train_start: str
@@ -77,6 +79,7 @@ def load_config(PATH_CONFIG_TOML: Path, PATH_PROJECT_ROOT: Path ) -> ProjectConf
     validated_dir = PATH_PROJECT_ROOT / p["validated_dir"]                      
     processed_dir = PATH_PROJECT_ROOT / p["processed_dir"]
     models_dir=PATH_PROJECT_ROOT / p["models_dir"]
+    champion_log = PATH_PROJECT_ROOT / p["champion_log"]
 
     # Råvärden
     pm25_station = pm25["namn"]
@@ -109,6 +112,7 @@ def load_config(PATH_CONFIG_TOML: Path, PATH_PROJECT_ROOT: Path ) -> ProjectConf
         validated_dir=validated_dir,
         processed_dir=processed_dir,
         models_dir = models_dir,
+        champion_log=champion_log,
 
         # Fullständiga sökvägar till träningsdata
         train_pm25=raw_dir / fn["train_pm25"].format(**fmt),
@@ -136,6 +140,7 @@ def load_config(PATH_CONFIG_TOML: Path, PATH_PROJECT_ROOT: Path ) -> ProjectConf
         selection_metric=mod["selection_metric"],
         random_state=mod["random_state"],
         target_column=mod["target_column"],
+        antal_dagar_sedan=mod["antal_dagar_sedan"],
 
         # Tidsperioder
         train_start=train_start,

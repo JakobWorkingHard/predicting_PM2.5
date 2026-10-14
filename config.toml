@@ -7,6 +7,7 @@ merged_dir = "data/merged"        # Mergad raw data
 validated_dir = "data/validated"  # validerad data, inte interpolerad
 processed_dir = "data/processed"  # rensad data, skapas av koden, versionshanteras inte
 models_dir = "models"
+champion_log = "models/champion_log.csv"  # historik: vinnande modell + timestamp per körning
 
 
 [paths.filenames]
@@ -39,6 +40,7 @@ horisont = 6 # Prognosshorisont i timmar
 #   "Validation MSE"      (lägre är bättre)
 selection_metric = "Validation R²" 
 random_state = 42
+antal_dagar_sedan = 7  # champion räknas som färsk om tränad inom detta antal dagar
 target_column = "target"        # namn på målvariabeln i processade filer
 
 [model.features]
