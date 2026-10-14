@@ -6,6 +6,7 @@ raw_dir = "data/raw"              # rådata från API:erna, versionshanteras
 merged_dir = "data/merged"        # Mergad raw data
 validated_dir = "data/validated"  # validerad data, inte interpolerad
 processed_dir = "data/processed"  # rensad data, skapas av koden, versionshanteras inte
+models_dir = "models"
 
 
 [paths.filenames]
@@ -17,6 +18,8 @@ train_vader_forskjuten  = "train_vader_forskjuten_{vaderstation}_{train_start}_{
 train_merged_forskjuten = "train_merged_forskjuten_{train_start}_{train_slut}_vaderstationid_{vaderstation_id}_pm25tidsserie_{pm25_tidsserie_id}_horisont_{horisont}.csv"
 train_validated         = "train_validated_{train_start}_{train_slut}.csv"
 train_processed         = "train_processed_{train_start}_{train_slut}.csv"
+val_validated           = "val_validated_{validering_start}_{validering_slut}.csv"
+val_processed           = "val_processed_{validering_start}_{validering_slut}.csv"
 
 val_pm25 = "val_{pm25_station}_{validering_start}_{validering_slut}_pm25tidsserie_{pm25_tidsserie_id}.csv"
 val_vader = "val_{vaderstation}_{validering_start}_{validering_slut}_vaderstationid_{vaderstation_id}.csv"
@@ -27,7 +30,33 @@ luft = "https://datavardluft.smhi.se/52North/api"
 vader = "https://opendata-download-metobs.smhi.se/api/version/1.0"
 
 [model]
-horisont = 6 # Prognoshorisont i timmar
+horisont = 6 # Prognosshorisont i timmar
+# Vilken metric som avgör bäst modell. 
+# Måste matcha en kolumn i results_df exakt. Giltiga alternativ:
+#   "Validation MAE"      (lägre är bättre)
+#   "Validation RMSE"     (lägre är bättre)
+#   "Validation R²"       (högre är bättre)
+#   "Validation MSE"      (lägre är bättre)
+selection_metric = "Validation R²" 
+random_state = 42
+target_column = "target"        # namn på målvariabeln i processade filer
+
+[model.features]
+# Features som modellerna ska använda
+columns = [
+    "pm25",
+    "Lufttemperatur",
+    "vind_sin",
+    "vind_cos",
+    "Vindhastighet",
+    "Relativ luftfuktighet",
+    "Nederbördsmängd",
+    "timme_sin",
+    "timme_cos",
+    "helg",
+    "helg_timme_sin",
+    "helg_timme_cos",
+]
 
 [time]
 train_start = "2023-05-26"  # när PM2.5-tidsserien startade
