@@ -49,7 +49,7 @@ def hamta_pm25(TRAIN_START, TRAIN_SLUT, tidsserie_id, LUFT_API, csv_path):
     return df.set_index("tid")[["value"]].rename(columns={"value": "pm25"})
 
 
-def hamta_vader(parameter, station_id, VADER_API, csv_path, period="corrected-archive"):
+def hamta_vader_arkiv(parameter, station_id, VADER_API, csv_path, period="corrected-archive"):
     """
     Hämtar väderdata från SMHI.
     
