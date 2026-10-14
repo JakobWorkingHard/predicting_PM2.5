@@ -3,7 +3,14 @@ from src.extracting_data import (
     hamta_pm25,
     vader_data
 )
-from src.io import generate_csv, merge_df_and_generate_csv, forskjut_tid_csv, save_champion_model
+from src.io import (
+    generate_csv,
+    merge_df_and_generate_csv,
+    forskjut_tid_csv,
+    save_champion_model,
+    append_champion_log,
+    champion_is_fresh,
+)
 from src.config import ProjectConfig
 from src.validate_process import validate_data
 from src.features import add_wind_features, add_time_features
@@ -104,63 +111,78 @@ def orchestration(cfg: ProjectConfig):
         cfg.processed_dir.mkdir(parents=True, exist_ok=True)
         generate_csv(df, key, index=False)
 
+    # = 3C CHAMPION-CHECK: hoppa över träning om champion tränats nyligen
+
+    if not champion_is_fresh(cfg.champion_log, cfg.antal_dagar_sedan):
+        print(f"Vi har ingen aktiv ml modell sedan {cfg.antal_dagar_sedan} - börjar träna en ny champion")
+
     # = 4 TRÄNAR MODELLER
 
-    #   ==-- 4A Delar upp träningsdata och valideringsdata i X och y
-    X_train, y_train, X_val, y_val = load_train_val_data(
-        cfg.train_processed,
-        cfg.val_processed,
-        cfg.features,
-        cfg.target_column,
-    )
-
-    #   ==-- 4B Hämtar alla våra valda modeller
-    all_models = build_model_registry(cfg.random_state)
-
-    #   ==-- 4C Låter våra modeller möta varann
-    results_df, trained_models = train_and_evaluate_models(
-        all_models,
-        X_train,
-        y_train,
-        X_val,
-        y_val,
-    )
-    results_df = results_df.sort_values(by=cfg.selection_metric)
-    display_df(results_df)
-
-    #   ==-- 4D Skapar vår baseline
-    baseline_train, baseline_val = persistence_baseline(
-        X_train, y_train, X_val, y_val
-    )
-
-    #   ==-- 4E Champion vs baseline - bygg först, välj sen
-    comparison_df = build_comparison_table(results_df, baseline_val, cfg.selection_metric)
-    comparison_df = comparison_df.sort_values(by=cfg.selection_metric)
-    display_df(comparison_df)
-
-    #   ==-- 4F Välj vinnare bland modeller OCH baseline
-    best_name, best_row = select_best_model(
-        comparison_df, metric=cfg.selection_metric
-    )
-
-    if best_name == "Persistence Baseline":
-        print("Ingen modell slog baseline - sparar ingen champion.")
-        champion_row = best_row
-    else:
-        # Hämta fullständig rad från results_df för metadata
-        full_row = results_df[results_df["Modell"] == best_name].iloc[0]
-        champion_row = full_row
-        save_champion_model(
-            model=trained_models[best_name],
-            model_name=best_name,
-            best_row=full_row,
-            models_dir=cfg.models_dir,
-            random_state=cfg.random_state,
-            metric=cfg.selection_metric,
+        #   ==-- 4A Delar upp träningsdata och valideringsdata i X och y
+        X_train, y_train, X_val, y_val = load_train_val_data(
+            cfg.train_processed,
+            cfg.val_processed,
+            cfg.features,
+            cfg.target_column,
         )
-    champion_df = champion_row.to_frame().T
-    print(f"\nVinnare: {best_name}")
-    display_df(champion_df)
 
+        #   ==-- 4B Hämtar alla våra valda modeller
+        all_models = build_model_registry(cfg.random_state)
+
+        #   ==-- 4C Låter våra modeller möta varann
+        results_df, trained_models = train_and_evaluate_models(
+            all_models,
+            X_train,
+            y_train,
+            X_val,
+            y_val,
+        )
+        results_df = results_df.sort_values(by=cfg.selection_metric)
+        display_df(results_df)
+
+        #   ==-- 4D Skapar vår baseline
+        baseline_train, baseline_val = persistence_baseline(
+            X_train, y_train, X_val, y_val
+        )
+
+        #   ==-- 4E Champion vs baseline - bygg först, välj sen
+        comparison_df = build_comparison_table(results_df, baseline_val, cfg.selection_metric)
+        comparison_df = comparison_df.sort_values(by=cfg.selection_metric)
+        display_df(comparison_df)
+
+        #   ==-- 4F Välj vinnare bland modeller OCH baseline
+        best_name, best_row = select_best_model(
+            comparison_df, metric=cfg.selection_metric
+        )
+
+        if best_name == "Persistence Baseline":
+            print("Ingen modell slog baseline - sparar ingen champion.")
+            champion_row = best_row
+        else:
+            # Hämta fullständig rad från results_df för metadata
+            full_row = results_df[results_df["Modell"] == best_name].iloc[0]
+            champion_row = full_row
+            save_champion_model(
+                model=trained_models[best_name],
+                model_name=best_name,
+                best_row=full_row,
+                models_dir=cfg.models_dir,
+                random_state=cfg.random_state,
+                metric=cfg.selection_metric,
+            )
+        champion_df = champion_row.to_frame().T
+        print(f"\nVinnare: {best_name}")
+        display_df(champion_df)
+
+        # = 4G Logga vinnaren (även Persistence Baseline räknas som en giltig körning)
+        append_champion_log(
+            log_path=cfg.champion_log,
+            model_name=best_name,
+            metric=cfg.selection_metric,
+            score=champion_row[cfg.selection_metric],
+        )
+    else:
+        champion_log = pd.read_csv(cfg.champion_log)
+        print(f"Finns redan ml modell från {champion_log['timestamp'].iloc[-1]}\nModellnamn: {champion_log['modell'].iloc[-1]}\nValideringsmetod: {champion_log['metric'].iloc[-1]}\nScore: {champion_log['score'].iloc[-1]}")
 
 

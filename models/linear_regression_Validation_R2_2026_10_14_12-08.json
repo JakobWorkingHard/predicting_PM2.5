@@ -1,6 +1,6 @@
 {
   "model_name": "Linear Regression",
-  "model_file": "C:\\Users\\Lenovo\\Desktop\\predicting_PM2.5-main\\models\\linear_regression.joblib",
+  "model_file": "C:\\Users\\Lenovo\\Desktop\\predicting_PM2.5-main\\models\\linear_regression_Validation_R2_2026_10_14_12-08.joblib",
   "random_state": 42,
   "selection_metric": "Validation R²",
   "metrics": {
