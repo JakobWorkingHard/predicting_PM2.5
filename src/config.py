@@ -12,6 +12,7 @@ class ProjectConfig:
     processed_dir: Path
     models_dir: Path
     champion_log: Path
+    datakontroll_log: Path
 
     # Fullständiga sökvägar till specifika filer
     train_pm25: Path
@@ -80,6 +81,7 @@ def load_config(PATH_CONFIG_TOML: Path, PATH_PROJECT_ROOT: Path ) -> ProjectConf
     processed_dir = PATH_PROJECT_ROOT / p["processed_dir"]
     models_dir=PATH_PROJECT_ROOT / p["models_dir"]
     champion_log = PATH_PROJECT_ROOT / p["champion_log"]
+    datakontroll_log = PATH_PROJECT_ROOT / p["datakontroll_log"]
 
     # Råvärden
     pm25_station = pm25["namn"]
@@ -113,6 +115,7 @@ def load_config(PATH_CONFIG_TOML: Path, PATH_PROJECT_ROOT: Path ) -> ProjectConf
         processed_dir=processed_dir,
         models_dir = models_dir,
         champion_log=champion_log,
+        datakontroll_log=datakontroll_log,
 
         # Fullständiga sökvägar till träningsdata
         train_pm25=raw_dir / fn["train_pm25"].format(**fmt),

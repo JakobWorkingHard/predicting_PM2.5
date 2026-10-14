@@ -10,6 +10,7 @@ from src.io import (
     save_champion_model,
     append_champion_log,
     champion_is_fresh,
+    append_datakontroll_log
 )
 from src.config import ProjectConfig
 from src.validate_process import validate_data
@@ -103,13 +104,36 @@ def orchestration(cfg: ProjectConfig):
     }
 
     for key, value in merged_data.items():
+        antal_merged = len(value)
+
         df = validate_data(value)
+        antal_validerad = len(df)
+
         df = add_wind_features(df)
         df = add_time_features(df, cfg.horisont)
         df[cfg.target_column] = df["pm25"].shift(-cfg.horisont)
-        df = df.dropna()
+
+        # Kolumnerna som modellen faktiskt använder
+        modellkolumner = list(cfg.features) + [cfg.target_column]
+        saknade = df[modellkolumner].isna().sum()
+
+        df = df.dropna(subset=modellkolumner)
+
+        append_datakontroll_log(
+            cfg.datakontroll_log,
+            key.name,
+            antal_merged,
+            antal_validerad,
+            len(df),
+            saknade,
+        )
+
         cfg.processed_dir.mkdir(parents=True, exist_ok=True)
         generate_csv(df, key, index=False)
+
+
+
+        
 
     # = 3C CHAMPION-CHECK: hoppa över träning om champion tränats nyligen
 
