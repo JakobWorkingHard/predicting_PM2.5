@@ -21,6 +21,11 @@ train_validated         = "train_validated_{train_start}_{train_slut}.csv"
 train_processed         = "train_processed_{train_start}_{train_slut}.csv"
 val_validated           = "val_validated_{validering_start}_{validering_slut}.csv"
 val_processed           = "val_processed_{validering_start}_{validering_slut}.csv"
+test_pm25      = "test_{pm25_station}_{test_start}_{test_slut}_pm25tidsserie_{pm25_tidsserie_id}.csv"
+test_vader     = "test_{vaderstation}_{test_start}_{test_slut}_vaderstationid_{vaderstation_id}.csv"
+test_merged    = "test_merged_{test_start}_{test_slut}_pm25tidsserie_{pm25_tidsserie_id}_vaderstationid_{vaderstation_id}.csv"
+test_validated = "test_validated_{test_start}_{test_slut}.csv"
+test_processed = "test_processed_{test_start}_{test_slut}.csv"
 
 val_pm25 = "val_{pm25_station}_{validering_start}_{validering_slut}_pm25tidsserie_{pm25_tidsserie_id}.csv"
 val_vader = "val_{vaderstation}_{validering_start}_{validering_slut}_vaderstationid_{vaderstation_id}.csv"
@@ -64,8 +69,10 @@ columns = [
 train_start = "2023-05-26"  # när PM2.5-tidsserien startade
 train_slut = "2025-12-31"
 validering_start = "2026-01-01"
-validering_slut = "2026-04-30"
-test_start = "2026-05-01"   # hämtas inte under utvecklingen
+validering_slut = "2026-05-31"
+# train_slut_CT =  Fixar variabeln senare, så det blir sista dagen i corrected archive
+test_start = "2026-05-31"   # FIXA så det blir en dagens datum minus x månader (så många månader det finns i latest months)
+test_slut = "2026-09-30"    # FIXA så det blir dagens datum
 
 [station.pm25]
 # Det är ca 4 km mellan stationerna, men ingen mätstation närmare Malmö A mäter PM2.5

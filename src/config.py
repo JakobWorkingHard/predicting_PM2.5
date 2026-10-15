@@ -30,6 +30,13 @@ class ProjectConfig:
     val_validated: Path
     val_processed: Path
 
+    # Testdata
+    test_pm25: Path
+    test_vader: Path
+    test_merged: Path
+    test_validated: Path
+    test_processed: Path
+
     # API:er
     luft_api: str
     vader_api: str
@@ -48,6 +55,7 @@ class ProjectConfig:
     validering_start: str
     validering_slut: str
     test_start: str
+    test_slut: str
 
     # PM2.5 Station
     pm25_station: str
@@ -91,8 +99,9 @@ def load_config(PATH_CONFIG_TOML: Path, PATH_PROJECT_ROOT: Path ) -> ProjectConf
     pm25_tidsserie_id = pm25["tidsserie_id"]
     vaderstation_id = vader["id"]
     validering_start = t["validering_start"]
-    validering_slut = t["validering_slut"]  
-    
+    validering_slut = t["validering_slut"]
+    test_start = t["test_start"]
+    test_slut = t["test_slut"]
 
     # Värden för filnamnsmallar (stationsnamn sanerade, övriga oförändrade)
     fmt = {
@@ -105,6 +114,8 @@ def load_config(PATH_CONFIG_TOML: Path, PATH_PROJECT_ROOT: Path ) -> ProjectConf
         "horisont": mod["horisont"],
         "validering_start": validering_start,
         "validering_slut": validering_slut,
+        "test_start": test_start,
+        "test_slut": test_slut,
     }
 
     return ProjectConfig(
@@ -133,6 +144,13 @@ def load_config(PATH_CONFIG_TOML: Path, PATH_PROJECT_ROOT: Path ) -> ProjectConf
         val_validated=validated_dir / fn["val_validated"].format(**fmt),
         val_processed=processed_dir / fn["val_processed"].format(**fmt),
 
+        # Fullständiga sökvägar till testdata
+        test_pm25=raw_dir / fn["test_pm25"].format(**fmt),
+        test_vader=raw_dir / fn["test_vader"].format(**fmt),
+        test_merged=merged_dir / fn["test_merged"].format(**fmt),
+        test_validated=validated_dir / fn["test_validated"].format(**fmt),
+        test_processed=processed_dir / fn["test_processed"].format(**fmt),
+
         # API:er
         luft_api=api["luft"],
         vader_api=api["vader"],
@@ -150,7 +168,8 @@ def load_config(PATH_CONFIG_TOML: Path, PATH_PROJECT_ROOT: Path ) -> ProjectConf
         train_slut=train_slut,
         validering_start=t["validering_start"],
         validering_slut=t["validering_slut"],
-        test_start=t["test_start"],
+        test_start=test_start,
+        test_slut=test_slut,
 
         # PM2.5 Station
         pm25_station=pm25_station,

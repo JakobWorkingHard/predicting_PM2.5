@@ -54,7 +54,7 @@ def orchestration(cfg: ProjectConfig):
         cfg.train_slut,
         cfg.vaderstation_id,
         cfg.vader_api,
-        cfg.train_vader
+        cfg.train_vader,
     )
     generate_csv(train_vader_data, cfg.train_vader)
     log.info("Träningsdata för väder har hämtats och sparats.")
@@ -268,6 +268,30 @@ def orchestration(cfg: ProjectConfig):
             champion_log["modell"].iloc[-1],
             champion_log["metric"].iloc[-1],
             champion_log["score"].iloc[-1],
+        )
+
+
+    # = 5 TESTDATA
+
+        # ==-- 5A HÄMTA TESTDATA
+        test_pm_data = hamta_pm25(
+            cfg.test_start,
+            cfg.test_slut,
+            cfg.pm25_tidsserie_id,
+            cfg.luft_api,
+            cfg.test_pm25,
+        )
+
+        generate_csv(test_pm_data, cfg.test_pm25)
+
+        test_vader_data = vader_data(
+            cfg.vader_parametrar,
+            cfg.test_start, 
+            cfg.test_slut,# Hämta allt
+            cfg.vaderstation_id,
+            cfg.vader_api,
+            cfg.test_vader,
+             "latest-months"
         )
 
 
