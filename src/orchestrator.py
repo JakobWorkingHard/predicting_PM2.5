@@ -23,9 +23,16 @@ from src.train_models import (
 )
 from src.metrics import select_best_model, build_comparison_table, display_df
 
+from src.logger import setup_logger
+
+log = setup_logger(__name__)
+
+
+
 
 
 def orchestration(cfg: ProjectConfig):
+    log.info("Startar projektets orchestration.")
 
     # = 1 TRÄNINGSDATA: Hämtar, validerar och transformerar
 
@@ -38,6 +45,7 @@ def orchestration(cfg: ProjectConfig):
         cfg.train_pm25,
     )
     generate_csv(train_pm_data, cfg.train_pm25)
+    log.info("Träningsdata för PM2.5 har hämtats och sparats.")
 
     #    ==-- 1B Hämtar tränings-väderdata alt. genererar df om csv redan finns
     train_vader_data = vader_data(
@@ -49,6 +57,7 @@ def orchestration(cfg: ProjectConfig):
         cfg.train_vader
     )
     generate_csv(train_vader_data, cfg.train_vader)
+    log.info("Träningsdata för väder har hämtats och sparats.")
 
     #    ==-- 1C Mergar träningsdata pm2.5 och väderdata (om mergad csv ej redan finns)
     merge_df_and_generate_csv(
@@ -58,6 +67,7 @@ def orchestration(cfg: ProjectConfig):
         cfg.train_merged,
         False
     )
+    log.info("Träningsdata för PM2.5 och väder har sammanfogats.")
 
     # = 2 VALIDERINGSDATA: Hämtar, validerar och transformerar
 
@@ -70,6 +80,7 @@ def orchestration(cfg: ProjectConfig):
         cfg.val_pm25
     )
     generate_csv(val_pm_data, cfg.val_pm25)
+    log.info("Valideringsdata för PM2.5 har hämtats och sparats.")
 
     #   ==-- 2B Hämtar validerings-väderdata alt. genererar df om csv redan finns
     val_vader_data = vader_data(
@@ -81,6 +92,7 @@ def orchestration(cfg: ProjectConfig):
         cfg.val_vader
     )
     generate_csv(val_vader_data, cfg.val_vader)
+    log.info("Träningsdata för väder har hämtats och sparats.")
 
     #    ==-- 2C Mergar valideringsdata pm2.5 och väderdata (om mergad csv ej redan finns)
     merge_df_and_generate_csv(
@@ -90,6 +102,7 @@ def orchestration(cfg: ProjectConfig):
         cfg.val_merged,
         False
     )
+    log.info("Valideringsdata för PM2.5 och väder har sammanfogats.")
 
     # = 3 VALIDERAR, TRANSFORMERAR OCH SPARAR TRÄNINGSDATA OCH VALIDERINGSDATA
 
@@ -104,6 +117,8 @@ def orchestration(cfg: ProjectConfig):
     }
 
     for key, value in merged_data.items():
+        log.info("Startar bearbetning av dataset: %s", key.name)
+
         antal_merged = len(value)
 
         df = validate_data(value)
@@ -131,6 +146,8 @@ def orchestration(cfg: ProjectConfig):
         cfg.processed_dir.mkdir(parents=True, exist_ok=True)
         generate_csv(df, key, index=False)
 
+        log.info("Bearbetat dataset har sparats: %s", key.name)
+
 
 
         
@@ -138,11 +155,18 @@ def orchestration(cfg: ProjectConfig):
     # = 3C CHAMPION-CHECK: hoppa över träning om champion tränats nyligen
 
     if not champion_is_fresh(cfg.champion_log, cfg.antal_dagar_sedan):
-        print(f"Vi har ingen aktiv ml modell sedan {cfg.antal_dagar_sedan} - börjar träna en ny champion")
+        log.info(
+        "Ingen tillräckligt aktuell champion finns. "
+        "Startar modellträning. Gräns: %s dagar.",
+        cfg.antal_dagar_sedan,
+        )
+
 
     # = 4 TRÄNAR MODELLER
 
         #   ==-- 4A Delar upp träningsdata och valideringsdata i X och y
+        log.info("Laddar tränings- och valideringsdata för modellträning.")
+
         X_train, y_train, X_val, y_val = load_train_val_data(
             cfg.train_processed,
             cfg.val_processed,
@@ -161,6 +185,7 @@ def orchestration(cfg: ProjectConfig):
             X_val,
             y_val,
         )
+        log.info("Modellträningen och utvärderingen är klar.")
         results_df = results_df.sort_values(by=cfg.selection_metric)
         display_df(results_df)
 
@@ -174,15 +199,32 @@ def orchestration(cfg: ProjectConfig):
         comparison_df = comparison_df.sort_values(by=cfg.selection_metric)
         display_df(comparison_df)
 
+
+
+
         #   ==-- 4F Välj vinnare bland modeller OCH baseline
         best_name, best_row = select_best_model(
             comparison_df, metric=cfg.selection_metric
         )
 
+        log.info(
+            "Bästa alternativ: %s. Urvalsmått: %s. Score: %.4f.",
+            best_name,
+            cfg.selection_metric,
+            best_row[cfg.selection_metric],
+        )
+
+
+
+
         if best_name == "Persistence Baseline":
-            print("Ingen modell slog baseline - sparar ingen champion.")
+            log.info("Ingen modell slog baseline. Sparar ingen champion.")
             champion_row = best_row
+        
+        
         else:
+
+
             # Hämta fullständig rad från results_df för metadata
             full_row = results_df[results_df["Modell"] == best_name].iloc[0]
             champion_row = full_row
@@ -194,8 +236,11 @@ def orchestration(cfg: ProjectConfig):
                 random_state=cfg.random_state,
                 metric=cfg.selection_metric,
             )
+
+            log.info("Champion-modellen %s har sparats.", best_name)
+        
         champion_df = champion_row.to_frame().T
-        print(f"\nVinnare: {best_name}")
+        log.info("Slutligt valt alternativ: %s", best_name)
         display_df(champion_df)
 
         # = 4G Logga vinnaren (även Persistence Baseline räknas som en giltig körning)
@@ -205,8 +250,25 @@ def orchestration(cfg: ProjectConfig):
             metric=cfg.selection_metric,
             score=champion_row[cfg.selection_metric],
         )
+
+        log.info(
+            "Champion-loggen har uppdaterats. Modell: %s, mått: %s, score: %.4f.",
+            best_name,
+            cfg.selection_metric,
+            champion_row[cfg.selection_metric],
+        )
+
+
     else:
         champion_log = pd.read_csv(cfg.champion_log)
-        print(f"Finns redan ml modell från {champion_log['timestamp'].iloc[-1]}\nModellnamn: {champion_log['modell'].iloc[-1]}\nValideringsmetod: {champion_log['metric'].iloc[-1]}\nScore: {champion_log['score'].iloc[-1]}")
+        log.info(
+            "En befintlig champion är fortfarande aktuell. "
+            "Tidpunkt: %s | Modell: %s | Mått: %s | Score: %s",
+            champion_log["timestamp"].iloc[-1],
+            champion_log["modell"].iloc[-1],
+            champion_log["metric"].iloc[-1],
+            champion_log["score"].iloc[-1],
+        )
+
 
 

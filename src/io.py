@@ -3,6 +3,9 @@ import joblib
 import json
 from pathlib import Path
 from datetime import datetime, timedelta
+from src.logger import setup_logger
+
+log = setup_logger(__name__)
 
 
 def generate_csv(data, path_and_name_of_csv, index = True):
@@ -204,14 +207,15 @@ def append_datakontroll_log(log_path, dataset, antal_merged, antal_validerad, an
     borttagna = antal_validerad - antal_kvar
     andel = borttagna / antal_validerad
 
-    # Utskrift i terminalen
-    print(f"\n--- Datakontroll: {dataset} ---")
-    print(f"Rader i mergad fil:          {antal_merged}")
-    print(f"Rader efter validate_data:   {antal_validerad}")
-    print(f"Rader efter dropna:          {antal_kvar}")
-    print(f"Borttagna rader:             {borttagna} ({andel:.1%})")
-    print("Saknade värden per kolumn (en rad kan sakna flera):")
-    print(saknade[saknade > 0].to_string())
+    # Utskrift
+    log.info("--- Datakontroll: %s ---", dataset)
+    log.info("Rader i mergad fil: %s", antal_merged)
+    log.info("Rader efter validate_data: %s", antal_validerad)
+    log.info("Rader efter dropna: %s", antal_kvar)
+    log.info("Borttagna rader: %s (%.1f%%)", borttagna, andel * 100)
+    
+    log.info("Saknade värden per kolumn (en rad kan sakna flera):\n%s",
+         saknade[saknade > 0].to_string())
 
     # En rad i loggen. Alla kolumner tas med, även de med 0 saknade,
     # så att loggen har samma kolumner vid varje körning.
@@ -229,4 +233,4 @@ def append_datakontroll_log(log_path, dataset, antal_merged, antal_validerad, an
 
     header = not log_path.is_file()
     pd.DataFrame([rad]).to_csv(log_path, mode="a", header=header, index=False)
-    print(f"Loggade datakontroll i: {log_path}")
+    log.info("Loggade datakontroll i: %s", log_path)
