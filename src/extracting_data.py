@@ -198,7 +198,7 @@ def hamta_vader_arkiv( parameter,station_id,VADER_API,csv_path=None,period="corr
 
 
 
-def vader_data(parametrar, starttid, sluttid, station_id, VADER_API, csv_path):
+def vader_data(parametrar, starttid, sluttid, station_id, VADER_API, csv_path, period="corrected-archive"):
     """Skapar dictionary av väderdata inhämtat via api med våra parametrar.
     Om csv_path redan finns returneras df direkt från filen."""
     if os.path.exists(csv_path):
@@ -209,7 +209,7 @@ def vader_data(parametrar, starttid, sluttid, station_id, VADER_API, csv_path):
     for namn, nummer in parametrar.items():
         print(f"Hämtar {namn}...", flush=True)
         try:
-            data = hamta_vader_arkiv(nummer, station_id, VADER_API)
+            data = hamta_vader_arkiv(nummer, station_id, VADER_API, period)
             vader_delar[namn] = data.loc[starttid:sluttid, "varde"]
         except Exception as e:
             print(f"  Fel för {namn}: {e}")
