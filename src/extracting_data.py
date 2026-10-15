@@ -80,6 +80,11 @@ def hamta_pm25(TRAIN_START, TRAIN_SLUT, tidsserie_id, LUFT_API, csv_path):
 
     df = pd.DataFrame(alla_varden)
     df["tid"] = till_svensk_tid(df["timestamp"])
+
+    # Samma mätning kan komma med två gånger vid månadsskiften,
+    # eftersom vi hämtar en månad i taget. Ta bort exakta kopior.
+    df = df.drop_duplicates(subset=["timestamp", "value"])
+
     return df.set_index("tid")[["value"]].rename(columns={"value": "pm25"})
 
 
@@ -209,7 +214,7 @@ def vader_data(parametrar, starttid, sluttid, station_id, VADER_API, csv_path, p
     for namn, nummer in parametrar.items():
         print(f"Hämtar {namn}...", flush=True)
         try:
-            data = hamta_vader_arkiv(nummer, station_id, VADER_API, period)
+            data = hamta_vader_arkiv(nummer, station_id, VADER_API, csv_path=None, period=period)
             vader_delar[namn] = data.loc[starttid:sluttid, "varde"]
         except Exception as e:
             print(f"  Fel för {namn}: {e}")

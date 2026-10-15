@@ -101,8 +101,6 @@ def load_config(PATH_CONFIG_TOML: Path, PATH_PROJECT_ROOT: Path ) -> ProjectConf
     vaderstation_id = vader["id"]
     validering_start = t["validering_start"]
     validering_slut = t["validering_slut"]
-    test_start = t["test_start"]
-    test_slut = t["test_slut"]
 
     # Värden för filnamnsmallar (stationsnamn sanerade, övriga oförändrade)
     fmt = {
@@ -115,8 +113,6 @@ def load_config(PATH_CONFIG_TOML: Path, PATH_PROJECT_ROOT: Path ) -> ProjectConf
         "horisont": mod["horisont"],
         "validering_start": validering_start,
         "validering_slut": validering_slut,
-        "test_start": test_start,
-        "test_slut": test_slut,
     }
 
 
@@ -149,13 +145,6 @@ def load_config(PATH_CONFIG_TOML: Path, PATH_PROJECT_ROOT: Path ) -> ProjectConf
         val_merged=merged_dir / fn["val_merged"].format(**fmt),
         val_validated=validated_dir / fn["val_validated"].format(**fmt),
         val_processed=processed_dir / fn["val_processed"].format(**fmt),
-
-        # Fullständiga sökvägar till testdata
-        test_pm25=raw_dir / fn["test_pm25"].format(**fmt),
-        test_vader=raw_dir / fn["test_vader"].format(**fmt),
-        test_merged=merged_dir / fn["test_merged"].format(**fmt),
-        test_validated=validated_dir / fn["test_validated"].format(**fmt),
-        test_processed=processed_dir / fn["test_processed"].format(**fmt),
 
         # API:er
         luft_api=api["luft"],
