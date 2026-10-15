@@ -85,6 +85,9 @@ def hamta_pm25(TRAIN_START, TRAIN_SLUT, tidsserie_id, LUFT_API, csv_path):
     # eftersom vi hämtar en månad i taget. Ta bort exakta kopior.
     df = df.drop_duplicates(subset=["timestamp", "value"])
 
+    # Behåll endast observationer inom det begärda tidsintervallet
+    df = df[(df["tid"] >= start_tid) & (df["tid"] <= slut_tid)]
+
     return df.set_index("tid")[["value"]].rename(columns={"value": "pm25"})
 
 

@@ -34,11 +34,15 @@ Båda API:erna är öppna och kräver ingen nyckel.
 |---|---|---|
 | PM2.5, träning | 2023-05-26 – 2025-12-31 | 2026-10-02 |
 | Väder, träning | 2023-05-26 – 2025-12-31 | 2026-10-02 |
-| PM2.5, validering | 2026-01-01 – 2026-04-30 | 2026-10-12 |
-| Väder, validering | 2026-01-01 – 2026-04-30 | 2026-10-12 |
-| Test | 2026-05-01 – | [fyll i] |
+| PM2.5, validering | 2026-01-01 – 2026-05-31 | fyll i |
+| Väder, validering | 2026-01-01 – 2026-05-31 | fyll i |
+| Test | 2026-06-07 – 2026-10-15| 2026-10-15 |
 
 Hämtningsdatumet spelar roll eftersom de senaste mätvärdena är preliminära och kan korrigeras i efterhand. Data som hämtas vid ett senare tillfälle kan därför skilja sig något.
+
+Träningsperioden börjar 2023-05-26, samma dag som den första PM2.5-mätningen vid Dalaplan.
+
+Tränings- och valideringsdata kommer från SMHI:s kvalitetskontrollerade arkiv (`corrected-archive`). Testdatan kommer från `latest-months`, som innehåller ungefär de senaste fyra månaderna och inte är kvalitetskontrollerad. Eftersom `latest-months` hela tiden rullar framåt ändras perioden varje gång den hämtas. Testdatan som används i utvärderingen hämtades därför en gång, 2026-10-15, och sparades i `data/test/`, så att resultatet går att återskapa.
 
 ## Hur datan hämtas eller återskapas
 
@@ -55,15 +59,21 @@ All data i `data/` versionshanteras, så att alla i gruppen arbetar med exakt sa
 
 Steg 1–3 hoppas över om utdatafilen redan finns. Steg 4 körs alltid.
 
-### Tidsperioder
+#### Tidsperioder
 
-| Period | Från | Till |
-|---|---|---|
-| Träning | 2023-05-26 | 2025-12-31 |
-| Validering | 2026-01-01 | 2026-04-30 |
-| Test | 2026-05-01 | [fyll i] |
+| Period | Från | Till | Källa för väderdata |
+|---|---|---|---|
+| Träning | 2023-05-26 | 2025-12-31 | `corrected-archive` |
+| Validering | 2026-01-01 | 2026-05-31 | `corrected-archive` |
+| Test | 2026-06-07 | 2026-10-15 | `latest-months` |
 
-**Viktigt:** Testdata från 2026-05-01 och framåt får inte hämtas eller committas under utvecklingen. Den används en gång, i slutet av projektet, för att utvärdera den slutliga modellen.
+Träningsperioden börjar 2023-05-26, samma dag som den första PM2.5-mätningen vid Dalaplan. Tränings- och valideringsdata kommer från SMHI:s kvalitetskontrollerade arkiv (`corrected-archive`).
+
+Testdatan kommer från `latest-months`, som innehåller ungefär de senaste fyra månaderna och inte är kvalitetskontrollerad. Hela perioden används utom de 4 senaste timmarna, eftersom de senaste mätvärdena för PM2.5 eller väder kan saknas eller ännu inte vara uppdaterade. Testperioden börjar där `latest-months` börjar, och därför finns ett glapp mellan validerings- och testperioden (2026-06-01 – 2026-06-06).
+
+Eftersom `latest-months` hela tiden rullar framåt ändras perioden varje gång den hämtas. Testdatan som används i utvärderingen hämtades därför en gång och sparades i `data/test/`, så att resultatet går att återskapa.
+
+**Viktigt:** Testdatan hämtades inte under utvecklingen. Den hämtades 2026-10-15, efter att den slutliga modellen hade valts, och används en gång för att utvärdera den.
 
 ### Datamappar
 
@@ -106,7 +116,7 @@ Saknade värden i träningsdatan (22 825 timmar):
 
 Totalt tas 1 270 rader bort (cirka 5,6 %).
 
-[fyll i f;r valideringsdatan]
+[fyll i för valideringsdatan]
 
 Funktionerna för interpolation i `src/validate_process.py` (`preprocess_data`, `interpolate_short_gaps`, `interpolate_wind_direction` och `fill_short_rain_gaps`) finns kvar men används inte.
 
@@ -118,11 +128,12 @@ Målvariabeln är PM2.5-halten sex timmar senare. Som features används PM2.5, l
 
 - **Preliminär data:** de senaste mätvärdena från båda API:erna är okontrollerade realtidsdata som kan ändras eller underkännas i efterhand.
 - **Nederbörd saknas i hela dygnsblock:** luckorna börjar och slutar ofta vid samma klockslag, vilket tyder på att hela mätdygn har underkänts i SMHI:s kvalitetskontroll.
+- **Ett längre avbrott i PM2.5:** PM2.5 saknas 17 timmar i följd, från 2026-08-07 kl. 16 till 2026-08-08 kl. 08. Det är ett enda sammanhängande avbrott i mätningen, inte utspridda luckor. Raderna tas bort enligt avsnittet Saknade värden.
 
 
 ## Begränsningar
 
-- **Väder hämtas bara från det kvalitetskontrollerade arkivet.** Arkivet släpar efter några månader. Om en period sträcker sig längre än arkivet blir det inget fel, utan väderkolumnerna tar bara slut. Testperioden och live-prognoser kräver därför att även SMHI:s perioder `latest-months` och `latest-day` används.
+- **Olika datakällor för träning och test:** modellerna tränas och valideras på kvalitetskontrollerad väderdata (`corrected-archive`), men testas på okontrollerad data från `latest-months`. Testresultatet speglar därför hur modellen fungerar på data av den kvalitet som finns tillgänglig i drift, men en del av felet kan bero på mätvärden som senare korrigeras.
 - **Skillnad mellan träning och drift:** modellerna tränas på kvalitetskontrollerade data, men live används okontrollerade realtidsvärden.
 - **En station:** PM2.5 mäts i trafikmiljö vid Dalaplan och är inte nödvändigtvis representativ för andra delar av Malmö.
 - **Avstånd mellan stationerna:** väderdatan kommer från en station cirka 4 km från Dalaplan, och de lokala vindförhållandena i ett gaturum kan skilja sig från dem vid Malmö A.
