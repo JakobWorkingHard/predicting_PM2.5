@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 from pathlib import Path
 import tomllib
+import pandas as pd
 
 
 @dataclass(frozen=True)
@@ -30,6 +31,7 @@ class ProjectConfig:
     val_validated: Path
     val_processed: Path
 
+    
     # API:er
     luft_api: str
     vader_api: str
@@ -47,7 +49,6 @@ class ProjectConfig:
     train_slut: str
     validering_start: str
     validering_slut: str
-    test_start: str
 
     # PM2.5 Station
     pm25_station: str
@@ -61,6 +62,14 @@ class ProjectConfig:
     vader_lat: float
     vader_lon: float
     vader_parametrar: dict
+
+    # Testdata – sökvägar skapas när testperioden har beräknats
+    test_pm25: Path | None = None
+    test_vader: Path | None = None
+    test_merged: Path | None = None
+    test_validated: Path | None = None
+    test_processed: Path | None = None
+    
 
 def load_config(PATH_CONFIG_TOML: Path, PATH_PROJECT_ROOT: Path ) -> ProjectConfig:
     with open(PATH_CONFIG_TOML, "rb") as f:
@@ -107,6 +116,11 @@ def load_config(PATH_CONFIG_TOML: Path, PATH_PROJECT_ROOT: Path ) -> ProjectConf
         "validering_slut": validering_slut,
     }
 
+
+
+
+
+
     return ProjectConfig(
         # Mappar
         raw_dir=raw_dir,
@@ -150,7 +164,7 @@ def load_config(PATH_CONFIG_TOML: Path, PATH_PROJECT_ROOT: Path ) -> ProjectConf
         train_slut=train_slut,
         validering_start=t["validering_start"],
         validering_slut=t["validering_slut"],
-        test_start=t["test_start"],
+        
 
         # PM2.5 Station
         pm25_station=pm25_station,
@@ -165,3 +179,39 @@ def load_config(PATH_CONFIG_TOML: Path, PATH_PROJECT_ROOT: Path ) -> ProjectConf
         vader_lon=vader["lon"],
         vader_parametrar=vader["parametrar"],
     )
+
+
+
+def skapa_testvagar(
+    cfg: ProjectConfig,
+    test_start: pd.Timestamp,
+    test_slut: pd.Timestamp,
+) -> dict[str, Path]:
+    """Skapar sökvägar för testfiler baserat på den dynamiska testperioden."""
+
+    test_start_str = test_start.strftime("%Y-%m-%d")
+    test_slut_str = test_slut.strftime("%Y-%m-%d")
+
+    return {
+        "test_pm25": cfg.raw_dir / (
+            f"test_{cfg.pm25_station.replace(' ', '_')}_"
+            f"{test_start_str}_{test_slut_str}_"
+            f"pm25tidsserie_{cfg.pm25_tidsserie_id}.csv"
+        ),
+        "test_vader": cfg.raw_dir / (
+            f"test_{cfg.vaderstation.replace(' ', '_')}_"
+            f"{test_start_str}_{test_slut_str}_"
+            f"vaderstationid_{cfg.vaderstation_id}.csv"
+        ),
+        "test_merged": cfg.merged_dir / (
+            f"test_merged_{test_start_str}_{test_slut_str}_"
+            f"pm25tidsserie_{cfg.pm25_tidsserie_id}_"
+            f"vaderstationid_{cfg.vaderstation_id}.csv"
+        ),
+        "test_validated": cfg.validated_dir / (
+            f"test_validated_{test_start_str}_{test_slut_str}.csv"
+        ),
+        "test_processed": cfg.processed_dir / (
+            f"test_processed_{test_start_str}_{test_slut_str}.csv"
+        ),
+    }

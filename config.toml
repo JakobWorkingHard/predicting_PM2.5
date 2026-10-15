@@ -21,10 +21,21 @@ train_validated         = "train_validated_{train_start}_{train_slut}.csv"
 train_processed         = "train_processed_{train_start}_{train_slut}.csv"
 val_validated           = "val_validated_{validering_start}_{validering_slut}.csv"
 val_processed           = "val_processed_{validering_start}_{validering_slut}.csv"
-
 val_pm25 = "val_{pm25_station}_{validering_start}_{validering_slut}_pm25tidsserie_{pm25_tidsserie_id}.csv"
 val_vader = "val_{vaderstation}_{validering_start}_{validering_slut}_vaderstationid_{vaderstation_id}.csv"
 val_merged = "val_merged_{validering_start}_{validering_slut}_pm25tidsserie_{pm25_tidsserie_id}_vaderstationid_{vaderstation_id}.csv"
+
+# Testdata
+test_pm25 = "test_{pm25_station}_{test_start}_{test_slut}_pm25tidsserie_{pm25_tidsserie_id}.csv"
+test_vader = "test_{vaderstation}_{test_start}_{test_slut}_vaderstationid_{vaderstation_id}.csv"
+test_merged = "test_merged_{test_start}_{test_slut}_pm25tidsserie_{pm25_tidsserie_id}_vaderstationid_{vaderstation_id}.csv"
+test_validated = "test_validated_{test_start}_{test_slut}.csv"
+test_processed = "test_processed_{test_start}_{test_slut}.csv"
+
+
+
+
+
 
 [api]
 luft = "https://datavardluft.smhi.se/52North/api"
@@ -65,7 +76,7 @@ train_start = "2023-05-26"  # när PM2.5-tidsserien startade
 train_slut = "2025-12-31"
 validering_start = "2026-01-01"
 validering_slut = "2026-04-30"
-test_start = "2026-05-01"   # hämtas inte under utvecklingen
+
 
 [station.pm25]
 # Det är ca 4 km mellan stationerna, men ingen mätstation närmare Malmö A mäter PM2.5

@@ -3,7 +3,8 @@ import pandas as pd
 import requests
 import io
 import os
-
+from datetime import datetime
+from zoneinfo import ZoneInfo
 
 
 def till_svensk_tid(ms):
@@ -14,16 +15,49 @@ def till_svensk_tid(ms):
 
 
 def hamta_pm25(TRAIN_START, TRAIN_SLUT, tidsserie_id, LUFT_API, csv_path):
-    """Hämtar PM2.5 en månad i taget. Datumen tolkas i svensk tid och slutdatumet ingår.
-    Om csv_path redan finns returneras df direkt från filen."""
+    """
+    Hämtar PM2.5 en månad i taget.
+
+    Datumsträngar tolkas som hela kalenderdagar i svensk tid.
+    Tidsstämplar används som exakta tidpunkter.
+
+    Om csv_path redan finns returneras data från filen.
+    """
     if os.path.exists(csv_path):
         print(f"Läser pm2.5 från befintlig fil: {csv_path}")
         return pd.read_csv(csv_path, index_col="tid", parse_dates=True)
 
-    start_tid = pd.Timestamp(TRAIN_START, tz="Europe/Stockholm")
-    slut_tid = pd.Timestamp(TRAIN_SLUT, tz="Europe/Stockholm") + pd.Timedelta(days=1) - pd.Timedelta(seconds=1)
+    start_tid = pd.Timestamp(TRAIN_START)
+    slut_tid = pd.Timestamp(TRAIN_SLUT)
+
+    # Hantera starttiden
+    if start_tid.tzinfo is None:
+        start_tid = start_tid.tz_localize("Europe/Stockholm")
+    else:
+        start_tid = start_tid.tz_convert("Europe/Stockholm")
+
+    # Datumsträngar innebär hela kalenderdagar.
+    # Tidsstämplar innebär exakta tidpunkter.
+    if slut_tid.tzinfo is None:
+        slut_tid = (
+            slut_tid.tz_localize("Europe/Stockholm")
+            + pd.Timedelta(days=1)
+            - pd.Timedelta(seconds=1)
+        )
+    else:
+        slut_tid = slut_tid.tz_convert("Europe/Stockholm")
+
+    if start_tid > slut_tid:
+        raise ValueError(
+            f"Starttiden {start_tid} ligger efter sluttiden {slut_tid}."
+        )
+
+    
 
     alla_varden = []
+
+
+
     try:
         for manad in pd.period_range(start_tid.tz_localize(None), slut_tid.tz_localize(None), freq="M"):
             fran = max(start_tid, manad.start_time.tz_localize("Europe/Stockholm"))
@@ -49,55 +83,117 @@ def hamta_pm25(TRAIN_START, TRAIN_SLUT, tidsserie_id, LUFT_API, csv_path):
     return df.set_index("tid")[["value"]].rename(columns={"value": "pm25"})
 
 
-def hamta_vader_arkiv(parameter, station_id, VADER_API, csv_path, period="corrected-archive"):
+def hamta_vader_arkiv( parameter,station_id,VADER_API,csv_path=None,period="corrected-archive"):
     """
     Hämtar väderdata från SMHI.
-    
+
     Parametrar
     ----------
+    parameter : int
+        SMHI:s parameter-ID.
+    station_id : int
+        SMHI:s stations-ID.
+    VADER_API : str
+        Basadress till SMHI:s API.
+    csv_path : Path eller str, valfri
+        Sökväg där hämtad data ska sparas.
+        Om None sparas ingen fil.
     period : str
-        Vilken tidsperiod som ska hämtas. Giltiga val:
-        'corrected-archive', 'latest-months', 'latest-day', 'latest-hour'
+        Tidsperiod som ska hämtas:
+        'corrected-archive', 'latest-months',
+        'latest-day' eller 'latest-hour'.
+
+    Returns
+    -------
+    pd.DataFrame
+        DataFrame med tidsindex och kolumnerna
+        'varde' och 'kvalitet'.
     """
-    
-    # Använd bara den sparade filen om vi ber om det fasta arkivet
-    # (Vill vi ha "latest-day" vill vi ju faktiskt hämta den senaste datan varje gång)
-    if period == "corrected-archive" and os.path.exists(csv_path):
+
+    # Använd befintlig fil endast för corrected-archive
+    if (
+        period == "corrected-archive"
+        and csv_path is not None
+        and os.path.exists(csv_path)
+    ):
         print(f"Läser väderdata från befintlig fil: {csv_path}")
-        return pd.read_csv(csv_path, index_col="tid", parse_dates=True)
 
-    # Använd variabeln {period} i URL 
-    url = f"{VADER_API}/parameter/{parameter}/station/{station_id}/period/{period}/data.csv"
-    
+        return pd.read_csv(
+            csv_path,
+            index_col="tid",
+            parse_dates=True,
+        )
+
+    # Bygg URL till SMHI:s API
+    url = (
+        f"{VADER_API}/parameter/{parameter}"
+        f"/station/{station_id}/period/{period}/data.csv"
+    )
+
     try:
-        text = requests.get(url, timeout=120).text
+        svar = requests.get(url, timeout=120)
+        svar.raise_for_status()
+
     except requests.exceptions.RequestException as e:
-        print(f"Nätverksfel vid hämtning av väderdata (parameter {parameter}): {e}")
-        raise
-    except Exception as e:
-        print(f"Oväntat fel vid hämtning av väderdata: {e}")
+        print(
+            f"Nätverksfel vid hämtning av väderdata "
+            f"(parameter {parameter}): {e}"
+        )
         raise
 
     try:
-        # Hoppa över beskrivningen överst, tabellen börjar på raden som startar med "Datum"
-        rader = text.splitlines()
-        startrad = next(i for i, rad in enumerate(rader) if rad.startswith("Datum"))
-        df = pd.read_csv(io.StringIO("\n".join(rader[startrad:])), sep=";", usecols=[0, 1, 2, 3])
-        df.columns = ["datum", "tid_utc", "varde", "kvalitet"]
+        # Hitta början av CSV-tabellen
+        rader = svar.text.splitlines()
 
-        df["tid"] = pd.to_datetime(df["datum"] + " " + df["tid_utc"], utc=True).dt.tz_convert("Europe/Stockholm")
+        startrad = next(
+            i for i, rad in enumerate(rader)
+            if rad.startswith("Datum")
+        )
+
+        # Läs in CSV-data
+        df = pd.read_csv(
+            io.StringIO("\n".join(rader[startrad:])),
+            sep=";",
+            usecols=[0, 1, 2, 3],
+        )
+
+        df.columns = [
+            "datum",
+            "tid_utc",
+            "varde",
+            "kvalitet",
+        ]
+
+        # Konvertera tidsstämplar till svensk tid
+        df["tid"] = (
+            pd.to_datetime(
+                df["datum"] + " " + df["tid_utc"],
+                utc=True,
+            )
+            .dt.tz_convert("Europe/Stockholm")
+        )
+
+        # Skapa DataFrame med tid som index
         df = df.set_index("tid")[["varde", "kvalitet"]]
-        
-        # Spara den nedladdade datan till csv_path om du vill spara även ny data
-        df.to_csv(csv_path)
-        
+
+        # Spara endast om en sökväg har angetts
+        if csv_path is not None:
+            df.to_csv(csv_path)
+
         return df
-        
+
     except StopIteration:
-        print(f"Kunde inte hitta tabellstart ('Datum') i svaret för parameter {parameter}")
+        print(
+            f"Kunde inte hitta tabellstart ('Datum') "
+            f"i svaret för parameter {parameter}."
+        )
         raise
+
     except Exception as e:
-        print(f"Fel vid tolkning av väderdata för parameter {parameter}: {e}")
+        print(
+            f"Fel vid tolkning av väderdata "
+            f"för parameter {parameter}: {e}"
+        )
         raise
 
 
@@ -121,3 +217,93 @@ def vader_data(parametrar, starttid, sluttid, station_id, VADER_API, csv_path):
 
 
 
+def hamta_testperiod(station_id: int, VADER_API: str) -> tuple[pd.Timestamp, pd.Timestamp]:
+    """
+    Beräknar testperioden dynamiskt.
+
+    TEST_START:
+        Första tidsstämpeln i SMHI:s latest-months för lufttemperatur.
+
+    TEST_SLUT:
+        Aktuell svensk tid minus fyra timmar, avrundad nedåt
+        till närmaste hela timme.
+    """
+
+    # Hämta SMHI:s senaste månader för lufttemperatur (parameter 1)
+    url = (
+        f"{VADER_API}/parameter/1/station/{station_id}"
+        "/period/latest-months/data.csv"
+    )
+
+    svar = requests.get(url, timeout=120)
+    svar.raise_for_status()
+
+    # Läs CSV-tabellen från raden som börjar med "Datum"
+    rader = svar.text.splitlines()
+    startrad = next(
+        i for i, rad in enumerate(rader)
+        if rad.startswith("Datum")
+    )
+
+    df = pd.read_csv(
+        io.StringIO("\n".join(rader[startrad:])),
+        sep=";",
+        usecols=[0, 1, 2, 3],
+    )
+
+    df.columns = ["datum", "tid_utc", "varde", "kvalitet"]
+
+    if df.empty:
+        raise ValueError("SMHI returnerade ingen data för latest-months.")
+
+    # Första tidsstämpeln i SMHI:s svar
+    tider = pd.to_datetime(
+        df["datum"] + " " + df["tid_utc"],
+        utc=True,
+    ).dt.tz_convert("Europe/Stockholm")
+
+    test_start = tider.min()
+
+    # Aktuell svensk tid minus fyra timmar
+    nu = pd.Timestamp.now(tz="Europe/Stockholm")
+    test_slut = (nu - pd.Timedelta(hours=4)).floor("h")
+
+    if test_start > test_slut:
+        raise ValueError(
+            f"Ogiltig testperiod: start {test_start}, slut {test_slut}."
+        )
+
+    return test_start, test_slut
+
+
+
+
+def hamta_test_vader(
+    parametrar: dict,
+    test_start: pd.Timestamp,
+    test_slut: pd.Timestamp,
+    station_id: int,
+    VADER_API: str,
+) -> pd.DataFrame:
+    """
+    Hämtar väderdata för den dynamiska testperioden.
+    Använder SMHI:s latest-months och begränsar resultatet
+    till test_start och test_slut.
+    """
+
+    vader_delar = {}
+
+    for namn, nummer in parametrar.items():
+        print(f"Hämtar testdata för {namn}...", flush=True)
+
+        data = hamta_vader_arkiv(
+            parameter=nummer,
+            station_id=station_id,
+            VADER_API=VADER_API,
+            csv_path=None,
+            period="latest-months",
+        )
+
+        vader_delar[namn] = data.loc[test_start:test_slut, "varde"]
+
+    return pd.DataFrame(vader_delar)
