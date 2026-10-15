@@ -1,6 +1,9 @@
 import numpy as np
 import pandas as pd
 
+from src.logger import setup_logger
+
+log = setup_logger(__name__)
 
 def convert_datetime(df: pd.DataFrame) -> pd.DataFrame:
     """Konverterar kolumnen 'tid' till svensk timezone-aware datetime."""
@@ -29,6 +32,11 @@ def check_duplicates(df: pd.DataFrame) -> None:
     duplicates = df["tid"].duplicated().sum()
 
     if duplicates > 0:
+        log.warning(
+            "Datasetet innehåller %s dubbla tidsstämplar.",
+            duplicates,
+        )
+
         raise ValueError(
             f"Datasetet innehåller {duplicates} dubbla tidsstämplar."
         )
@@ -259,6 +267,8 @@ def fill_short_rain_gaps(
 def validate_data(df: pd.DataFrame) -> pd.DataFrame:
     """Validerar tidsserie och mätvärden utan interpolation."""
 
+    log.info("Startar datavalidering.")
+
     df = convert_datetime(df)
     df = sort_by_time(df)
 
@@ -270,6 +280,12 @@ def validate_data(df: pd.DataFrame) -> pd.DataFrame:
 
     # Ersätt ogiltiga mätvärden med NaN
     df = replace_invalid_values(df)
+
+    log.info(
+        "Datavalidering slutförd. Antal rader: %s, antal kolumner: %s.",
+        len(df),
+        len(df.columns),
+    )
 
     return df
 

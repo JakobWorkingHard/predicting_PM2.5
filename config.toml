@@ -8,7 +8,7 @@ validated_dir = "data/validated"  # validerad data, inte interpolerad
 processed_dir = "data/processed"  # rensad data, skapas av koden, versionshanteras inte
 models_dir = "models"
 champion_log = "models/champion_log.csv"  # historik: vinnande modell + timestamp per körning
-
+datakontroll_log = "logs/datakontroll.csv"
 
 [paths.filenames]
 # {}-placeholders ersätts i config.py med värden från TOML
