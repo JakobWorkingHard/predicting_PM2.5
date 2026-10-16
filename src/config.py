@@ -19,8 +19,6 @@ class ProjectConfig:
     train_pm25: Path
     train_vader: Path
     train_merged: Path
-    train_vader_forskjuten: Path
-    train_merged_forskjuten: Path
     train_validated: Path
     train_processed: Path
 
@@ -30,6 +28,14 @@ class ProjectConfig:
     val_merged: Path
     val_validated: Path
     val_processed: Path
+
+    # Förskjuten modellinje (måltidsväder)
+    train_processed_forskjuten: Path
+    val_processed_forskjuten: Path
+    forskjuten_log: Path
+    jamfordelse_log: Path
+    forskjuten_vaderkolumner: list
+    forskjuten_antal_dagar_sedan: int
 
     
     # API:er
@@ -79,6 +85,7 @@ def load_config(PATH_CONFIG_TOML: Path, PATH_PROJECT_ROOT: Path ) -> ProjectConf
     fn = raw["paths"]["filenames"]
     api = raw["api"]
     mod = raw["model"]
+    fork = raw["model"]["forskjuten"]
     t = raw["time"]
     pm25 = raw["station"]["pm25"]
     vader = raw["station"]["vader"]
@@ -90,7 +97,9 @@ def load_config(PATH_CONFIG_TOML: Path, PATH_PROJECT_ROOT: Path ) -> ProjectConf
     processed_dir = PATH_PROJECT_ROOT / p["processed_dir"]
     models_dir=PATH_PROJECT_ROOT / p["models_dir"]
     champion_log = PATH_PROJECT_ROOT / p["champion_log"]
+    forskjuten_log = PATH_PROJECT_ROOT / p["forskjuten_log"]
     datakontroll_log = PATH_PROJECT_ROOT / p["datakontroll_log"]
+    jamfordelse_log = PATH_PROJECT_ROOT / p["jamfordelse_log"]
 
     # Råvärden
     pm25_station = pm25["namn"]
@@ -134,8 +143,6 @@ def load_config(PATH_CONFIG_TOML: Path, PATH_PROJECT_ROOT: Path ) -> ProjectConf
         train_pm25=raw_dir / fn["train_pm25"].format(**fmt),
         train_vader=raw_dir / fn["train_vader"].format(**fmt),
         train_merged=merged_dir / fn["train_merged"].format(**fmt),
-        train_vader_forskjuten=raw_dir / fn["train_vader_forskjuten"].format(**fmt),
-        train_merged_forskjuten=merged_dir / fn["train_merged_forskjuten"].format(**fmt),
         train_validated=validated_dir / fn["train_validated"].format(**fmt),
         train_processed=processed_dir / fn["train_processed"].format(**fmt),
 
@@ -145,6 +152,14 @@ def load_config(PATH_CONFIG_TOML: Path, PATH_PROJECT_ROOT: Path ) -> ProjectConf
         val_merged=merged_dir / fn["val_merged"].format(**fmt),
         val_validated=validated_dir / fn["val_validated"].format(**fmt),
         val_processed=processed_dir / fn["val_processed"].format(**fmt),
+
+        # Förskjuten modellinje (måltidsväder)
+        train_processed_forskjuten=processed_dir / fn["train_processed_forskjuten"].format(**fmt),
+        val_processed_forskjuten=processed_dir / fn["val_processed_forskjuten"].format(**fmt),
+        forskjuten_log=forskjuten_log,
+        jamfordelse_log=jamfordelse_log,
+        forskjuten_vaderkolumner=fork["vaderkolumner"],
+        forskjuten_antal_dagar_sedan=fork["antal_dagar_sedan"],
 
         # API:er
         luft_api=api["luft"],
@@ -212,5 +227,9 @@ def skapa_testvagar(
         ),
         "test_processed": cfg.processed_dir / (
             f"test_processed_{test_start_str}_{test_slut_str}.csv"
+        ),
+        "test_processed_forskjuten": cfg.processed_dir / (
+            f"test_processed_forskjuten_{test_start_str}_{test_slut_str}"
+            f"_h{cfg.horisont}.csv"
         ),
     }

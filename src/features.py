@@ -28,6 +28,40 @@ def add_wind_features(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
+def ersatt_vader_med_maltidsvader(
+    df: pd.DataFrame,
+    vaderkolumner: list,
+    timmar: int = 6,
+) -> pd.DataFrame:
+    """
+    Ersätter väderkolumnernas värden med observationen 'timmar' timmar
+    senare, via df[kolumn].shift(-timmar) på den validerade kompletta
+    timaxeln (samma mönster och garanti som målvariabelns shift(-horisont)):
+    en rad = exakt en timme, luckor och sommar-/vintertid hanteras.
+
+    Används av den förskjuna modellinjen: vädret på raden för tidpunkten T
+    representerar vädret vid måltiden T + timmar, alltså när PM2.5-målet
+    realiseras. Kolumnnamnen ändras inte, så modellernas feature-schema
+    blir identiskt med championens.
+
+    VIKTIGT: eftersom Vindriktning skiftas före add_wind_features räknas
+    vind_sin/vind_cos automatiskt ur måltids-vindriktningen. Funktionen
+    måste anropas FÖRE add_wind_features.
+
+    Vid live-prediktion ska väder-slotten fyllas med en väderPROGNOS för
+    T + timmar i stället för en observation – träning och live måste
+    använda samma slot-alignment (se docs/evaluation.md).
+
+    Returnerar en kopia av DataFrame med ersatta värdervärden.
+    """
+    df = df.copy()
+
+    for kolumn in vaderkolumner:
+        df[kolumn] = df[kolumn].shift(-timmar)
+
+    return df
+
+
 def add_time_features(df: pd.DataFrame, horisont: int = 6) -> pd.DataFrame:
     """
     Lägger till timme på dygnet och helg för måltiden,
