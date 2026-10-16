@@ -1,4 +1,3 @@
-import numpy as np
 import pandas as pd
 
 from src.logger import setup_logger
@@ -87,9 +86,9 @@ def replace_invalid_values(df: pd.DataFrame) -> pd.DataFrame:
         "Nederbördsmängd"
     ] = pd.NA
 
-    # Vindriktning ska ligga mellan 0 och 360 grader.
-    # 360° och 0° representerar båda nord.
-    # Normalisera därför 360° till 0°.
+    # I SMHI:s data betyder 0° vindstilla och 360° nord.
+    # För sin/cos är 0° och 360° samma vinkel, så 360° sätts till 0°.
+    # Vindstilla hanteras i add_wind_features (Vindhastighet == 0).
     df.loc[
         df["Vindriktning"] == 360,
         "Vindriktning"
@@ -103,12 +102,6 @@ def replace_invalid_values(df: pd.DataFrame) -> pd.DataFrame:
     ] = pd.NA
 
     return df
-
-
-def check_missing_values(df: pd.DataFrame) -> pd.Series:
-    """Returnerar antal saknade värden per kolumn."""
-    
-    return df.isna().sum()
 
 
 def find_nan_gaps(df: pd.DataFrame, column: str) -> pd.DataFrame:
@@ -132,136 +125,6 @@ def find_nan_gaps(df: pd.DataFrame, column: str) -> pd.DataFrame:
     )
 
     return gaps
-
-
-def interpolate_short_gaps(
-    df: pd.DataFrame,
-    column: str,
-    max_gap: int = 3
-) -> pd.DataFrame:
-    """Interpolerar linjärt endast luckor som är högst max_gap timmar."""
-
-    df = df.copy()
-
-    # Hitta alla sammanhängande NaN-luckor
-    gaps = find_nan_gaps(df, column)
-
-    # Skapa interpolerade värden för hela kolumnen
-    interpolated = df[column].interpolate(
-        method="linear",
-        limit_area="inside"
-    )
-
-    # Använd de interpolerade värdena endast i korta luckor
-    for _, gap in gaps.iterrows():
-        if gap["hours"] <= max_gap:
-
-            mask = (
-                (df["tid"] >= gap["start"])
-                & (df["tid"] <= gap["end"])
-            )
-
-            df.loc[mask, column] = interpolated.loc[mask]
-
-    return df
-
-
-def interpolate_wind_direction(
-    df: pd.DataFrame,
-    column: str = "Vindriktning",
-    max_gap: int = 3
-) -> pd.DataFrame:
-    """Interpolerar korta luckor i vindriktning cirkulärt."""
-
-    df = df.copy()
-
-    # Hitta sammanhängande NaN-luckor
-    gaps = find_nan_gaps(df, column)
-
-    # Omvandla grader till radianer
-    radians = np.deg2rad(df[column])
-
-    # Representera vindriktningen med x- och y-komponenter
-    x = np.cos(radians)
-    y = np.sin(radians)
-
-    # Interpolera komponenterna
-    x_interpolated = x.interpolate(method="linear", limit_area="inside")
-    y_interpolated = y.interpolate(method="linear", limit_area="inside")
-
-    # Omvandla tillbaka till grader
-    interpolated_direction = (
-        np.rad2deg(
-            np.arctan2(y_interpolated, x_interpolated)
-        ) % 360
-    )
-
-    # Hantera flyttalsavrundning nära 360° så att nord representeras som 0°
-    interpolated_direction = interpolated_direction.mask(
-        np.isclose(interpolated_direction, 360.0),
-        0.0
-    )
-
-
-
-    # Fyll endast luckor som är högst max_gap timmar
-    for _, gap in gaps.iterrows():
-        if gap["hours"] <= max_gap:
-
-            mask = (
-                (df["tid"] >= gap["start"])
-                & (df["tid"] <= gap["end"])
-            )
-
-            df.loc[mask, column] = interpolated_direction.loc[mask]
-
-    return df
-
-
-def fill_short_rain_gaps(
-    df: pd.DataFrame,
-    column: str = "Nederbördsmängd",
-    max_gap: int = 3
-) -> pd.DataFrame:
-    """Fyller korta nederbördsluckor med 0 om det är 0 före och efter."""
-
-    df = df.copy()
-
-    gaps = find_nan_gaps(df, column)
-
-    for _, gap in gaps.iterrows():
-
-        if gap["hours"] <= max_gap:
-
-            before = df.loc[
-                df["tid"] < gap["start"],
-                column
-            ]
-
-            after = df.loc[
-                df["tid"] > gap["end"],
-                column
-            ]
-
-            # Luckan måste ha ett värde både före och efter
-            if before.empty or after.empty:
-                continue
-
-            before_value = before.iloc[-1]
-            after_value = after.iloc[0]
-
-            # Fyll endast om det är 0 både före och efter luckan
-            if before_value == 0 and after_value == 0:
-
-                mask = (
-                    (df["tid"] >= gap["start"])
-                    & (df["tid"] <= gap["end"])
-                )
-
-                df.loc[mask, column] = 0.0
-
-    return df
-
 
 
 def validate_data(df: pd.DataFrame) -> pd.DataFrame:
@@ -288,58 +151,3 @@ def validate_data(df: pd.DataFrame) -> pd.DataFrame:
     )
 
     return df
-
-
-
-def preprocess_data(df: pd.DataFrame) -> pd.DataFrame:
-    """Interpolerar korta luckor i validerad data för historisk analys."""
-
-    df = df.copy()
-
-    # Linjär interpolation av korta luckor
-    linear_columns = [
-        "pm25",
-        "Lufttemperatur",
-        "Vindhastighet",
-        "Relativ luftfuktighet",
-    ]
-
-    for column in linear_columns:
-        df = interpolate_short_gaps(df, column)
-
-    # Variabelspecifik hantering
-    df = interpolate_wind_direction(df)
-    df = fill_short_rain_gaps(df)
-
-    return df
-
-
-if __name__ == "__main__":
-    from pathlib import Path
-    from src.config import load_config
-
-    projekt_rot = Path(__file__).resolve().parent.parent
-    cfg = load_config(projekt_rot / "config.toml", projekt_rot)
-
-    df = pd.read_csv(cfg.train_merged)
-
-    print("Fil:", cfg.train_merged.name)
-    print("Shape:", df.shape)
-    print(df.head())
-    df = convert_datetime(df)
-    df = sort_by_time(df)
-
-    print("\nDatatyp för tid:")
-    print(df["tid"].dtype)
-
-    print("\nÄr tiden sorterad?")
-    print(df["tid"].is_monotonic_increasing)
-
-    print("\nKontrollerar dubbletter:")
-    #check_duplicates(df)
-
-    print("\nSaknade värden:")
-    print(check_missing_values(df))
-
-    print("\nLuckor:")
-    print(find_nan_gaps(df, "pm25"))
