@@ -12,6 +12,7 @@ from src.io import (
     save_champion_model,
     append_champion_log,
     champion_is_fresh,
+    hamta_champion_modell,
     append_datakontroll_log,
 )
 from src.config import ProjectConfig, skapa_testvagar
@@ -293,7 +294,6 @@ def orchestration(cfg: ProjectConfig):
         results_df = results_df.sort_values(
             by=cfg.selection_metric,
         )
-        display_df(results_df)
 
         # 5D. Skapa baseline
         baseline_train, baseline_val = persistence_baseline(
@@ -428,12 +428,12 @@ def orchestration(cfg: ProjectConfig):
         results_df = results_df.sort_values(
             by=cfg.selection_metric,
         )
-        display_df(results_df)
+
 
         # 6B. Baseline och jämförelsetabell
         baseline_train, baseline_val = persistence_baseline(
             X_train,
-            y_train,
+            y_train
             X_val,
             y_val,
         )
@@ -495,8 +495,15 @@ def orchestration(cfg: ProjectConfig):
             # rader som är kompletta i båda varianterna
             # (informationellt – båda linjerna behålls och båda ska
             # användas för live-prediktioner senare).
+            champion_modell, champion_namn = hamta_champion_modell(
+                cfg.models_dir,
+                cfg.champion_log,
+            )
+
             jamfor_championer(
                 cfg,
+                champion_modell=champion_modell,
+                champion_namn=champion_namn,
                 forskjuten_modell=trained_models[best_name],
                 forskjuten_namn=forskjuten_namn,
                 test_path_vanlig=testvagar["test_processed"],
