@@ -9,7 +9,6 @@ from src.extracting_data import (
 from src.io import (
     generate_csv,
     merge_df_and_generate_csv,
-    forskjut_tid_csv,
     save_champion_model,
     append_champion_log,
     champion_is_fresh,
@@ -17,7 +16,11 @@ from src.io import (
 )
 from src.config import ProjectConfig, skapa_testvagar
 from src.validate_process import validate_data
-from src.features import add_wind_features, add_time_features
+from src.features import (
+    add_wind_features,
+    add_time_features,
+    ersatt_vader_med_maltidsvader,
+)
 from src.train_models import (
     load_train_val_data,
     build_model_registry,
@@ -28,6 +31,7 @@ from src.metrics import (
     select_best_model,
     build_comparison_table,
     display_df,
+    jamfor_championer,
 )
 from src.logger import setup_logger
 
@@ -38,7 +42,11 @@ log = setup_logger(__name__)
 def orchestration(cfg: ProjectConfig):
     log.info("Startar projektets orchestration.")
 
-    # 1. Beräkna testperioden dynamiskt
+    
+    # 1. TESTDATA: Hämta och sammanfoga
+    
+
+    # 1A. Beräkna testperioden dynamiskt
     test_start, test_slut = hamta_testperiod(
         cfg.vaderstation_id,
         cfg.vader_api,
@@ -50,10 +58,10 @@ def orchestration(cfg: ProjectConfig):
         test_slut,
     )
 
-    # 2. Skapa sökvägar för testfilerna
+    # 1B. Skapa sökvägar för testfilerna
     testvagar = skapa_testvagar(cfg, test_start, test_slut)
 
-    # 3. Hämta PM2.5-testdata
+    # 1C. Hämta PM2.5-testdata
     test_pm_data = hamta_pm25(
         test_start,
         test_slut,
@@ -66,7 +74,7 @@ def orchestration(cfg: ProjectConfig):
 
     log.info("PM2.5-testdata har hämtats och sparats.")
 
-    # 4. Hämta vädertestdata
+    # 1D. Hämta vädertestdata
     test_vader_data = hamta_test_vader(
         parametrar=cfg.vader_parametrar,
         test_start=test_start,
@@ -79,7 +87,7 @@ def orchestration(cfg: ProjectConfig):
 
     log.info("Vädertestdata har hämtats och sparats.")
 
-    # 5. Sammanfoga PM2.5- och väderdata för testperioden
+    # 1E. Sammanfoga PM2.5- och väderdata för testperioden
     merge_df_and_generate_csv(
         testvagar["test_pm25"],
         testvagar["test_vader"],
@@ -91,10 +99,10 @@ def orchestration(cfg: ProjectConfig):
     log.info("Testdata för PM2.5 och väder har sammanfogats.")
 
     
-    # 6. TRÄNINGSDATA: Hämta och sammanfoga
+    # 2. TRÄNINGSDATA: Hämta och sammanfoga
     
 
-    # 6A. Hämta PM2.5-träningsdata
+    # 2A. Hämta PM2.5-träningsdata
     train_pm_data = hamta_pm25(
         cfg.train_start,
         cfg.train_slut,
@@ -107,7 +115,7 @@ def orchestration(cfg: ProjectConfig):
 
     log.info("Träningsdata för PM2.5 har hämtats och sparats.")
 
-    # 6B. Hämta väderdata för träning
+    # 2B. Hämta väderdata för träning
     train_vader_data = vader_data(
         cfg.vader_parametrar,
         cfg.train_start,
@@ -121,7 +129,7 @@ def orchestration(cfg: ProjectConfig):
 
     log.info("Träningsdata för väder har hämtats och sparats.")
 
-    # 6C. Sammanfoga träningsdata
+    # 2C. Sammanfoga träningsdata
     merge_df_and_generate_csv(
         cfg.train_pm25,
         cfg.train_vader,
@@ -133,10 +141,10 @@ def orchestration(cfg: ProjectConfig):
     log.info("Träningsdata för PM2.5 och väder har sammanfogats.")
 
     
-    # 7. VALIDERINGSDATA: Hämta och sammanfoga
+    # 3. VALIDERINGSDATA: Hämta och sammanfoga
     
 
-    # 7A. Hämta PM2.5-valideringsdata
+    # 3A. Hämta PM2.5-valideringsdata
     val_pm_data = hamta_pm25(
         cfg.validering_start,
         cfg.validering_slut,
@@ -149,7 +157,7 @@ def orchestration(cfg: ProjectConfig):
 
     log.info("Valideringsdata för PM2.5 har hämtats och sparats.")
 
-    # 7B. Hämta väderdata för validering
+    # 3B. Hämta väderdata för validering
     val_vader_data = vader_data(
         cfg.vader_parametrar,
         cfg.validering_start,
@@ -163,7 +171,7 @@ def orchestration(cfg: ProjectConfig):
 
     log.info("Valideringsdata för väder har hämtats och sparats.")
 
-    # 7C. Sammanfoga valideringsdata
+    # 3C. Sammanfoga valideringsdata
     merge_df_and_generate_csv(
         cfg.val_pm25,
         cfg.val_vader,
@@ -175,21 +183,26 @@ def orchestration(cfg: ProjectConfig):
     log.info("Valideringsdata för PM2.5 och väder har sammanfogats.")
 
     
-    # 8. VALIDERING, FEATURE ENGINEERING OCH SPARANDE
+    # 4. VALIDERING, FEATURE ENGINEERING OCH SPARANDE
     
     # Läs in de sammanfogade dataseten
     train_merged_df = pd.read_csv(cfg.train_merged)
     val_merged_df = pd.read_csv(cfg.val_merged)
     test_merged_df = pd.read_csv(testvagar["test_merged"])
 
-    # Samla alla dataset som ska bearbetas
+    # Samla alla dataset som ska bearbetas. mal_vader=True innebär att
+    # väderkolumnerna ersätts med måltidsväder: vädrets värde på rad T
+    # kommer från T + horisont, dvs. när PM2.5-målet realiseras.
     merged_data = {
-        cfg.train_processed: train_merged_df,
-        cfg.val_processed: val_merged_df,
-        testvagar["test_processed"]: test_merged_df,
+        (cfg.train_processed, False): train_merged_df,
+        (cfg.val_processed, False): val_merged_df,
+        (testvagar["test_processed"], False): test_merged_df,
+        (cfg.train_processed_forskjuten, True): train_merged_df,
+        (cfg.val_processed_forskjuten, True): val_merged_df,
+        (testvagar["test_processed_forskjuten"], True): test_merged_df,
     }
 
-    for output_path, merged_df in merged_data.items():
+    for (output_path, mal_vader), merged_df in merged_data.items():
         log.info("Bearbetar dataset: %s", output_path.name)
 
         antal_merged = len(merged_df)
@@ -198,6 +211,17 @@ def orchestration(cfg: ProjectConfig):
         df = validate_data(merged_df)
 
         antal_validerad = len(df)
+
+        if mal_vader:
+            # Vindriktning skiftas FÖRE add_wind_features, så att vind_sin/
+            # vind_cos räknas ur måltids-vindriktningen. Skiftet använder
+            # alltid horisonten: måltiden är T + horisont, samma som mål-
+            # skiftet, så vädret och målet kan aldrig hamnar ur fas.
+            df = ersatt_vader_med_maltidsvader(
+                df,
+                cfg.forskjuten_vaderkolumner,
+                cfg.horisont,
+            )
 
         # Skapa features
         df = add_wind_features(df)
@@ -229,7 +253,7 @@ def orchestration(cfg: ProjectConfig):
         log.info("Bearbetat dataset har sparats: %s", output_path.name)
 
     
-    # 9. CHAMPION-CHECK
+    # 5. CHAMPION-CHECK
     
 
     if not champion_is_fresh(
@@ -242,7 +266,7 @@ def orchestration(cfg: ProjectConfig):
             cfg.antal_dagar_sedan,
         )
 
-        # 9A. Ladda tränings- och valideringsdata
+        # 5A. Ladda tränings- och valideringsdata
         log.info("Laddar tränings- och valideringsdata för modellträning.")
 
         X_train, y_train, X_val, y_val = load_train_val_data(
@@ -252,10 +276,10 @@ def orchestration(cfg: ProjectConfig):
             cfg.target_column,
         )
 
-        # 9B. Skapa modellregister
+        # 5B. Skapa modellregister
         all_models = build_model_registry(cfg.random_state)
 
-        # 9C. Träna och utvärdera modellerna
+        # 5C. Träna och utvärdera modellerna
         results_df, trained_models = train_and_evaluate_models(
             all_models,
             X_train,
@@ -271,7 +295,7 @@ def orchestration(cfg: ProjectConfig):
         )
         display_df(results_df)
 
-        # 9D. Skapa baseline
+        # 5D. Skapa baseline
         baseline_train, baseline_val = persistence_baseline(
             X_train,
             y_train,
@@ -279,7 +303,7 @@ def orchestration(cfg: ProjectConfig):
             y_val,
         )
 
-        # 9E. Jämför modellerna med baseline
+        # 5E. Jämför modellerna med baseline
         comparison_df = build_comparison_table(
             results_df,
             baseline_val,
@@ -291,7 +315,7 @@ def orchestration(cfg: ProjectConfig):
         )
         display_df(comparison_df)
 
-        # 9F. Välj bästa alternativ
+        # 5F. Välj bästa alternativ
         best_name, best_row = select_best_model(
             comparison_df,
             metric=cfg.selection_metric,
@@ -332,7 +356,7 @@ def orchestration(cfg: ProjectConfig):
         log.info("Slutligt valt alternativ: %s", best_name)
         display_df(champion_df)
 
-        # 9G. Logga vinnaren
+        # 5G. Logga vinnaren
         append_champion_log(
             log_path=cfg.champion_log,
             model_name=best_name,
@@ -358,4 +382,158 @@ def orchestration(cfg: ProjectConfig):
             champion_log["modell"].iloc[-1],
             champion_log["metric"].iloc[-1],
             champion_log["score"].iloc[-1],
+        )
+
+    # 6. FÖRSKJUTEN MODELLINJE (måltidsväder T+6)
+    #
+    # Vädret på varje rad ersätts med observationen vid T + horisont,
+    # dvs. vädret som råder när PM2.5-målet realiseras. Modellerna tävlar
+    # separat och vinnaren sparas som förskjuten champion med en EGEN
+    # logg (forskjuten_log). Championflödet ovan påverkas inte alls.
+    # OBS för framtiden: vid live-prediktion ska väder-slotten fyllas med
+    # en väderPROGNOS för T+6, inte en observation (se docs/evaluation.md).
+
+    if not champion_is_fresh(
+        cfg.forskjuten_log,
+        cfg.forskjuten_antal_dagar_sedan,
+    ):
+        log.info(
+            "Ingen tillräckligt aktuell förskjuten champion finns. "
+            "Startar träning av förskjuten modellinje. Gräns: %s dagar.",
+            cfg.forskjuten_antal_dagar_sedan,
+        )
+
+        # 6A. Modellturnering – samma register, mått och komponenter
+        # som championflödet, men på måltidsväder-datan. Dataseten med
+        # måltidsväder byggdes i steg 4.
+        X_train, y_train, X_val, y_val = load_train_val_data(
+            cfg.train_processed_forskjuten,
+            cfg.val_processed_forskjuten,
+            cfg.features,
+            cfg.target_column,
+        )
+
+        all_models = build_model_registry(cfg.random_state)
+
+        results_df, trained_models = train_and_evaluate_models(
+            all_models,
+            X_train,
+            y_train,
+            X_val,
+            y_val,
+        )
+
+        log.info("Träningen av den förskjuna modellinjen är klar.")
+
+        results_df = results_df.sort_values(
+            by=cfg.selection_metric,
+        )
+        display_df(results_df)
+
+        # 6B. Baseline och jämförelsetabell
+        baseline_train, baseline_val = persistence_baseline(
+            X_train,
+            y_train,
+            X_val,
+            y_val,
+        )
+
+        comparison_df = build_comparison_table(
+            results_df,
+            baseline_val,
+            cfg.selection_metric,
+        )
+
+        comparison_df = comparison_df.sort_values(
+            by=cfg.selection_metric,
+        )
+        display_df(comparison_df)
+
+        # 6C. Välj bästa alternativ
+        best_name, best_row = select_best_model(
+            comparison_df,
+            metric=cfg.selection_metric,
+        )
+
+        log.info(
+            "Bästa alternativ (måltidsväder): %s. Urvalsmått: %s. Score: %.4f.",
+            best_name,
+            cfg.selection_metric,
+            best_row[cfg.selection_metric],
+        )
+
+        forskjuten_namn = f"{best_name} (T+6)"
+
+        if best_name == "Persistence Baseline":
+            log.info(
+                "Ingen modell slog baseline på måltidsväder. "
+                "Sparar ingen förskjuten champion."
+            )
+            champion_row = best_row
+
+        else:
+            # Hämta modellens resultat för metadata
+            full_row = results_df[
+                results_df["Modell"] == best_name
+            ].iloc[0]
+
+            champion_row = full_row
+
+            save_champion_model(
+                model=trained_models[best_name],
+                model_name=forskjuten_namn,
+                best_row=full_row,
+                models_dir=cfg.models_dir,
+                random_state=cfg.random_state,
+                metric=cfg.selection_metric,
+                filprefix="forskjuten_",
+            )
+
+            log.info("Förskjuten champion %s har sparats.", forskjuten_namn)
+
+            # 6D. Head-to-head mot championen på TEST-data, på de
+            # rader som är kompletta i båda varianterna
+            # (informationellt – båda linjerna behålls och båda ska
+            # användas för live-prediktioner senare).
+            jamfor_championer(
+                cfg,
+                forskjuten_modell=trained_models[best_name],
+                forskjuten_namn=forskjuten_namn,
+                test_path_vanlig=testvagar["test_processed"],
+                test_path_forskjuten=testvagar["test_processed_forskjuten"],
+            )
+
+        champion_df = champion_row.to_frame().T
+
+        log.info("Slutligt valt alternativ (måltidsväder): %s", best_name)
+        display_df(champion_df)
+
+        # 6E. Logga vinnaren i den EGEN loggen för förskjuna championer.
+        # Aldrig i champion_log – annars tror champion_is_fresh att
+        # observations-championen är nytränad.
+        append_champion_log(
+            log_path=cfg.forskjuten_log,
+            model_name=forskjuten_namn,
+            metric=cfg.selection_metric,
+            score=champion_row[cfg.selection_metric],
+        )
+
+        log.info(
+            "Loggen för förskjuna championer har uppdaterats. "
+            "Modell: %s, mått: %s, score: %.4f.",
+            forskjuten_namn,
+            cfg.selection_metric,
+            champion_row[cfg.selection_metric],
+        )
+
+    else:
+        forskjuten_log = pd.read_csv(cfg.forskjuten_log)
+
+        log.info(
+            "En befintlig förskjuten champion är fortfarande aktuell. "
+            "Tidpunkt: %s | Modell: %s | Mått: %s | Score: %s",
+            forskjuten_log["timestamp"].iloc[-1],
+            forskjuten_log["modell"].iloc[-1],
+            forskjuten_log["metric"].iloc[-1],
+            forskjuten_log["score"].iloc[-1],
         )

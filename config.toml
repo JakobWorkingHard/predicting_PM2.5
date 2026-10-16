@@ -7,16 +7,21 @@ merged_dir = "data/merged"        # Mergad raw data
 validated_dir = "data/validated"  # validerad data, inte interpolerad
 processed_dir = "data/processed"  # rensad data, skapas av koden, versionshanteras inte
 models_dir = "models"
-champion_log = "models/champion_log.csv"  # historik: vinnande modell + timestamp per körning
+champion_log = "logs/champion_log.csv"  # historik: vinnande modell + timestamp per körning
+forskjuten_log = "logs/forskjuten_log.csv"  # egen logg för förskjuna championer (måltidsväder) – HÅLLS SKILT från champion_log så champion_is_fresh inte påverkas
 datakontroll_log = "logs/datakontroll.csv"
+jamfordelse_log = "logs/jamfordelse_forskjuten.csv"  # head-to-head: champion vs förskjuten champion vs baseline
 
 [paths.filenames]
 # {}-placeholders ersätts i config.py med värden från TOML
 train_pm25              = "train_{pm25_station}_{train_start}_{train_slut}_pm25tidsserie_{pm25_tidsserie_id}.csv"
 train_vader             = "train_{vaderstation}_{train_start}_{train_slut}_vaderstationid_{vaderstation_id}.csv"
 train_merged            = "train_merged_{train_start}_{train_slut}_pm25tidsserie_{pm25_tidsserie_id}_vaderstationid_{vaderstation_id}.csv"
-train_vader_forskjuten  = "train_vader_forskjuten_{vaderstation}_{train_start}_{train_slut}_{vaderstation_id}_{horisont}.csv"
-train_merged_forskjuten = "train_merged_forskjuten_{train_start}_{train_slut}_vaderstationid_{vaderstation_id}_pm25tidsserie_{pm25_tidsserie_id}_horisont_{horisont}.csv"
+# Förskjuten modellinje (måltidsväder): bearbetade dataset där värdet i
+# väderkolumnerna på rad T kommer från T + horisont. Testvarianten byggs
+# men utvärderas först i den framtida engångsutvärderingen.
+train_processed_forskjuten = "train_processed_forskjuten_{train_start}_{train_slut}_h{horisont}.csv"
+val_processed_forskjuten   = "val_processed_forskjuten_{validering_start}_{validering_slut}_h{horisont}.csv"
 train_validated         = "train_validated_{train_start}_{train_slut}.csv"
 train_processed         = "train_processed_{train_start}_{train_slut}.csv"
 val_validated           = "val_validated_{validering_start}_{validering_slut}.csv"
@@ -70,6 +75,24 @@ columns = [
     "helg_timme_sin",
     "helg_timme_cos",
 ]
+
+[model.forskjuten]
+# Förskjuten modellinje: måltidsväder. Vädrets värde på rad T hämtas från
+# T + horisont (från [model] ovan), dvs. vädret som råder när PM2.5-målet
+# realiseras. OBS: vid live-prediktion ska väder-slotten fylls med en
+# VÄDERPROGNOS för T + horisont (inte en observation) – träning och live
+# måste använda samma slot-alignment (se docs/evaluation.md).
+
+# Råa väderkolumner i merged-filerna som ersätts med måltidsväder.
+# Vindriktning skiftas före sin/cos-omvandlingen, så vind-feature:n följer med.
+vaderkolumner = [
+    "Lufttemperatur",
+    "Vindriktning",
+    "Vindhastighet",
+    "Relativ luftfuktighet",
+    "Nederbördsmängd",
+]
+antal_dagar_sedan = 7  # förskjuten champion räknas som färsk om tränad inom detta antal dagar
 
 [time]
 train_start = "2023-05-26"  # när PM2.5-tidsserien startade

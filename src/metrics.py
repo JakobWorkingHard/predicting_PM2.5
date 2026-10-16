@@ -1,6 +1,12 @@
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 from tabulate import tabulate
 import pandas as pd
+from datetime import datetime
+
+from src.io import hamta_champion_modell, append_jamfordelse_log
+from src.logger import setup_logger
+
+log = setup_logger(__name__)
 
 def evaluate_model(y_true, y_pred):
     """
@@ -100,3 +106,117 @@ def build_comparison_table(results_df, baseline_val_metrics, sort_by):
         .reset_index(drop=True)
     )
     return comparison_df
+
+
+def jamfor_championer(
+    cfg,
+    forskjuten_modell,
+    forskjuten_namn: str,
+    test_path_vanlig,
+    test_path_forskjuten,
+):
+    """
+    Head-to-head på TEST-data: den nuvarande championen mot den förskjuna
+    championen, plus persistence-baseline, på de testrader som är
+    kompletta i BÅDA varianterna. Körs vid omträning av den förskjuna
+    modellinjen (orchestrator block 6).
+
+    Championen predikteras från sin egen processed-fil (vädret gäller T)
+    och den förskjuna modellen från sin (vädret gäller T+6). Raderna
+    matchas via kolumnen 'tid'.
+
+    Resultatet visas och appendas till logs/jamfordelse_forskjuten.csv.
+    Observera: den förskjuna modellen utvärderas här med OBSERVERAT väder
+    vid T+6 ("orakelprognos"), vilket ger ett övre gräns-värde – i
+    produktion tillkommer prognosfel (se docs/evaluation.md).
+
+    Parametrar
+    ----------
+    cfg : ProjectConfig
+        Konfiguration: features, target-kolumn, loggar, models-katalog.
+    forskjuten_modell : estimator
+        Den tränade förskjuna championen.
+    forskjuten_namn : str
+        Namn på den förskjuna championen, t.ex. "SVR (T+6)".
+    test_path_vanlig : Path
+        Processad testfil för championens variant (vädret gäller T).
+    test_path_forskjuten : Path
+        Processad testfil för den förskjuna varianten (vädret gäller T+6).
+    """
+    champion_modell, champion_namn = hamta_champion_modell(
+        cfg.models_dir,
+        cfg.champion_log,
+    )
+
+    if champion_modell is None:
+        log.warning(
+            "Hittade ingen sparad champion-modell. "
+            "Hoppar över head-to-head-jämförelsen på testdata."
+        )
+        return
+
+    champion_test = pd.read_csv(test_path_vanlig)
+    forskjuten_test = pd.read_csv(test_path_forskjuten)
+
+    gemensamma_tider = set(champion_test["tid"]) & set(forskjuten_test["tid"])
+
+    if not gemensamma_tider:
+        log.warning(
+            "Inga gemensamma testrader mellan championen och den "
+            "förskjuna varianten. Hoppar över jämförelsen."
+        )
+        return
+
+    # Samma tider, samma sortering: raderna motsvarar varandra exakt.
+    champion_rader = (
+        champion_test[champion_test["tid"].isin(gemensamma_tider)]
+        .sort_values("tid")
+        .reset_index(drop=True)
+    )
+    forskjuten_rader = (
+        forskjuten_test[forskjuten_test["tid"].isin(gemensamma_tider)]
+        .sort_values("tid")
+        .reset_index(drop=True)
+    )
+
+    if not champion_rader[cfg.target_column].equals(
+        forskjuten_rader[cfg.target_column]
+    ):
+        log.warning(
+            "Målvärdena skiljer mellan filerna på de gemensamma raderna. "
+            "Jämförelsen kan vara missvisande."
+        )
+
+    y = champion_rader[cfg.target_column]
+
+    prediktioner = {
+        f"{champion_namn} (nuvarande champion)": champion_modell.predict(
+            champion_rader[cfg.features]
+        ),
+        forskjuten_namn: forskjuten_modell.predict(forskjuten_rader[cfg.features]),
+        "Persistence Baseline": champion_rader["pm25"],
+    }
+
+    rader = []
+    for namn, y_pred in prediktioner.items():
+        resultat = evaluate_model(y, y_pred)
+        rader.append(
+            {
+                "timestamp": datetime.now().isoformat(timespec="seconds"),
+                "Modell": namn,
+                "MAE": resultat["MAE"],
+                "RMSE": resultat["RMSE"],
+                "R2": resultat["R2"],
+                "rader": len(champion_rader),
+            }
+        )
+
+    jamfordelse_df = pd.DataFrame(rader)
+    display_df(jamfordelse_df)
+
+    append_jamfordelse_log(cfg.jamfordelse_log, jamfordelse_df)
+
+    log.info(
+        "Head-to-head på testdata (%s gemensamma rader) är klar.",
+        len(champion_rader),
+    )
