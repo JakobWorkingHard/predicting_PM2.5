@@ -13,8 +13,8 @@ Datan delas upp i tid, inte slumpmässigt. Modellerna tränas på äldre data oc
 | Del | Från | Till | Timmar | Rader efter borttagning av saknade värden |
 |---|---|---|---|---|
 | Träning | 2023-05-26 | 2025-12-31 | 22 825 | 21 555 |
-| Validering | 2026-01-01 | 2026-04-30 | [fylls i senare] | [fylls i senare] |
-| Test | 2026-05-01 | [fylls i senare] | [fylls i senare] | [fylls i senare] |
+| Validering | 2026-01-01 | 2026-05-31 | [fylls i senare] | [fylls i senare] |
+| Test | Dynamiskt - beror på latest months vi får tillbaka från väder data, men start för ca 4 månader sedan | Dynamiskt - t.o.m för 4 timmar sedan från "nu" | [fylls i senare] | [fylls i senare] |
 
 Antalet timmar avser en komplett timaxel efter validering, med en rad per timme. Valideringsperioden har en timme mindre än 120 × 24, eftersom en timme försvinner vid omställningen till sommartid.
 
@@ -39,21 +39,25 @@ Rader där någon feature eller målet saknas tas bort. I träningsdatan är det
 **Inga värden fylls i.** Saknade värden interpoleras inte.
 
 ## Modeller som jämförs
-<!-- Kort lista: baseline och övriga alternativ, en mening om varför var och en valdes. -->
 
-### Baseline
+Alla modeller tränas på träningsdata och jämförs på valideringsdata, där den bästa blir champion.
 
-### Alternativ 1
+- **Persistence-baseline** – "luften om 6 timmar är säkert ungefär som nu". En enkel gissning som är svår att slå, eftersom luftvärden sällan ändras snabbt. Alla riktiga modeller måste vara bättre än denna för att vara användbara.
+- **Linear Regression** – ritar en rak linje genom datapunkterna, den enklaste modellen som finns.
+- **Ridge Regression** – som Linear Regression, men med ett skydd mot att lita för mycket på features som liknar varandra (t.ex. vind-sin och vind-cos).
+- **Random Forest** – många små beslutsträd får varsin röst; genom att räkna ihop alla röster blir svaret stabilare än ett ensamt träd.
+- **HistGradientBoosting** – bygger ett träd i taget, där varje nytt träd lär sig av misstagen från det förra.
+- **SVR** – hittar mönster som inte följer räta linjer, plus/minus en liten marginal.
+- **LightGBM** – samma idé som HistGradientBoosting, men från ett externt bibliotek som bygger träd snabbare.
+- **XGBoost** – samma metod igen, men från det bibliotek som vunnit flest tävlingar.
 
-### Alternativ 2
+## Vinnande modeller (både vanlig och T+6)
 
-## Resultat
-
-| Modell | MAE | RMSE | Kommentar |
-|--------|-----|------|-----------|
-| Baseline | | | |
-| Alternativ 1 | | | |
-| Alternativ 2 | | | |
+| Modell | MAE | RMSE | R² | Kommentar |
+|--------|-----|------|-----|-----------|
+| Baseline (persistence) | 1.68 | 2.48 | 0.37 | Senaste uppmätta PM2.5-värde som prognos |
+| SVR | 1.49 | 2.10 | 0.55 | Väder vid prediktionstillfället |
+| SVR (T+6) | 1.48 | 2.08 | 0.55 | Väder vid måltiden |
 
 <!-- Hänvisa till figurer, t.ex. ![Prediktion mot verkligt värde](../results/figures/prediction.png) -->
 

@@ -3,7 +3,7 @@ from tabulate import tabulate
 import pandas as pd
 from datetime import datetime
 
-from src.io import hamta_champion_modell, append_jamfordelse_log
+from src.io import append_jamfordelse_log
 from src.logger import setup_logger
 
 log = setup_logger(__name__)
@@ -110,6 +110,8 @@ def build_comparison_table(results_df, baseline_val_metrics, sort_by):
 
 def jamfor_championer(
     cfg,
+    champion_modell,
+    champion_namn: str,
     forskjuten_modell,
     forskjuten_namn: str,
     test_path_vanlig,
@@ -134,6 +136,11 @@ def jamfor_championer(
     ----------
     cfg : ProjectConfig
         Konfiguration: features, target-kolumn, loggar, models-katalog.
+    champion_modell : estimator
+        Den nuvarande championen (laddad av anroparen, t.ex. via
+        hamta_champion_modell).
+    champion_namn : str
+        Namn på den nuvarande championen, t.ex. "SVR".
     forskjuten_modell : estimator
         Den tränade förskjuna championen.
     forskjuten_namn : str
@@ -143,11 +150,6 @@ def jamfor_championer(
     test_path_forskjuten : Path
         Processad testfil för den förskjuna varianten (vädret gäller T+6).
     """
-    champion_modell, champion_namn = hamta_champion_modell(
-        cfg.models_dir,
-        cfg.champion_log,
-    )
-
     if champion_modell is None:
         log.warning(
             "Hittade ingen sparad champion-modell. "
