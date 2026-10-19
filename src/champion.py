@@ -52,14 +52,19 @@ def load_latest_champion(log_path, models_dir):
 def _metric_key_and_direction(metric):
     """
     Översätter selection_metric, t.ex. "Validation R²", till nyckeln som
-    evaluate_model använder ("MAE", "RMSE" eller "R2") och anger om ett
-    högre värde är bättre. Bara R² är bättre ju högre den är.
+    evaluate_model använder och anger vad som räknas som bäst:
+      "higher"          R²: högre är bättre
+      "lower"           MAE och RMSE: lägre är bättre
+      "closest_to_zero" Bias: närmare noll är bättre
+    Samma regler som select_best_model i metrics.py.
     """
+    if "Bias" in metric:
+        return "Bias", "closest_to_zero"
     if "R²" in metric or "R2" in metric:
-        return "R2", True
+        return "R2", "higher"
     if "RMSE" in metric or "MSE" in metric:
-        return "RMSE", False
-    return "MAE", False
+        return "RMSE", "lower"
+    return "MAE", "lower"
 
 def compete_with_champion(
     new_model,
@@ -93,14 +98,17 @@ def compete_with_champion(
     new_results = evaluate_model(y_test, new_model.predict(X_test))
     old_results = evaluate_model(y_test, old_model.predict(X_test))
 
-    key, higher_is_better = _metric_key_and_direction(metric)
+    key, direction = _metric_key_and_direction(metric)
     new_score = new_results[key]
     old_score = old_results[key]
 
-    if higher_is_better:
+    if direction == "higher":
         new_wins = new_score > old_score
-    else:
+    elif direction == "lower":
         new_wins = new_score < old_score
+    else:
+        # Bias: den som ligger närmast noll vinner
+        new_wins = abs(new_score) < abs(old_score)
 
     results_df = pd.DataFrame([
         {"Modell": f"{new_name} (dagens bästa)", **new_results},
