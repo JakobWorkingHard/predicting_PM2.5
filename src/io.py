@@ -90,9 +90,13 @@ def save_champion_model(
     with open(meta_path, "w", encoding="utf-8") as f:
         json.dump(meta, f, indent=2, ensure_ascii=False)
     print(f"Sparade metadata: {meta_path}")
+    return model_path
+    
 
 
-def append_champion_log(log_path, model_name, metric, score):
+def append_champion_log(log_path, model_name, metric, score, sokvag=None):
+    # sokvag är en frivillig parameter. Om ingen sökväg skickas med, 
+    # till exempel när baslinjen vinner, blir den tom.
     """
     Appendar en rad med vinnande modell, timestamp, metric och score
     till champion-loggen (CSV). Skapar filen med rubrikrad om den saknas.
@@ -109,6 +113,8 @@ def append_champion_log(log_path, model_name, metric, score):
         Metrik som avgjorde valet, t.ex. "Validation R²".
     score : float
         Vinnarens värde på metricken.
+    sokvag : Path eller None
+        Sökväg till championens .joblib-fil. Tom om baslinjen vann.
     """
     log_path = Path(log_path)
     log_path.parent.mkdir(parents=True, exist_ok=True)
@@ -121,6 +127,9 @@ def append_champion_log(log_path, model_name, metric, score):
                 "timestamp": timestamp,
                 "metric": metric,
                 "score": score,
+                # Bara filnamnet sparas, så att loggen fungerar på alla datorer.
+                # Modellen läses in med cfg.models_dir / filnamnet.
+                "sokvag": Path(sokvag).name if sokvag is not None else "",
             }
         ]
     )

@@ -327,10 +327,11 @@ def orchestration(cfg: ProjectConfig):
             cfg.selection_metric,
             best_row[cfg.selection_metric],
         )
-
+        # Ingen modell sparas när baseline vinner, så det finns ingen sökväg att logga
         if best_name == "Persistence Baseline":
             log.info("Ingen modell slog baseline. Sparar ingen champion.")
             champion_row = best_row
+            modell_sokvag = None
 
         else:
             # Hämta modellens resultat för metadata
@@ -340,7 +341,9 @@ def orchestration(cfg: ProjectConfig):
 
             champion_row = full_row
 
-            save_champion_model(
+            # save_champion_model returnerar sökvägen till .joblib-filen.
+            # Den loggas, så att championen kan läsas in igen senare.
+            modell_sokvag = save_champion_model(
                 model=trained_models[best_name],
                 model_name=best_name,
                 best_row=full_row,
@@ -356,12 +359,14 @@ def orchestration(cfg: ProjectConfig):
         log.info("Slutligt valt alternativ: %s", best_name)
         display_df(champion_df)
 
-        # 5G. Logga vinnaren
+        # 5G. Logga vinnaren, inklusive sökvägen till modellfilen
+        # (tom om baslinjen vann)
         append_champion_log(
             log_path=cfg.champion_log,
             model_name=best_name,
             metric=cfg.selection_metric,
             score=champion_row[cfg.selection_metric],
+            sokvag = modell_sokvag
         )
 
         log.info(
@@ -433,7 +438,7 @@ def orchestration(cfg: ProjectConfig):
         # 6B. Baseline och jämförelsetabell
         baseline_train, baseline_val = persistence_baseline(
             X_train,
-            y_train
+            y_train,
             X_val,
             y_val,
         )
@@ -470,6 +475,8 @@ def orchestration(cfg: ProjectConfig):
                 "Sparar ingen förskjuten champion."
             )
             champion_row = best_row
+            # Ingen modell sparas, så det finns ingen sökväg att logga
+            modell_sokvag = None
 
         else:
             # Hämta modellens resultat för metadata
@@ -478,8 +485,9 @@ def orchestration(cfg: ProjectConfig):
             ].iloc[0]
 
             champion_row = full_row
-
-            save_champion_model(
+            # save_champion_model returnerar sökvägen till .joblib-filen.
+            # Den loggas, så att championen kan läsas in igen senare.
+            modell_sokvag = save_champion_model(
                 model=trained_models[best_name],
                 model_name=forskjuten_namn,
                 best_row=full_row,
@@ -523,6 +531,7 @@ def orchestration(cfg: ProjectConfig):
             model_name=forskjuten_namn,
             metric=cfg.selection_metric,
             score=champion_row[cfg.selection_metric],
+            sokvag=modell_sokvag
         )
 
         log.info(
