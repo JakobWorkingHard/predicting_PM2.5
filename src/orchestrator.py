@@ -38,6 +38,7 @@ from src.logger import setup_logger
 
 from src.champion import load_latest_champion, compete_with_champion
 
+from src.data_pipeline import fetch_and_merge
 
 log = setup_logger(__name__)
 
@@ -101,89 +102,28 @@ def orchestration(cfg: ProjectConfig):
 
     log.info("Testdata för PM2.5 och väder har sammanfogats.")
 
-    
-    # 2. TRÄNINGSDATA: Hämta och sammanfoga
-    
 
-    # 2A. Hämta PM2.5-träningsdata
-    train_pm_data = hamta_pm25(
+    
+    # 2. Hämta och sammanfoga data
+    fetch_and_merge(
+        cfg,
         cfg.train_start,
         cfg.train_slut,
-        cfg.pm25_tidsserie_id,
-        cfg.luft_api,
-        cfg.train_pm25,
-    )
-
-    generate_csv(train_pm_data, cfg.train_pm25)
-
-    log.info("Träningsdata för PM2.5 har hämtats och sparats.")
-
-    # 2B. Hämta väderdata för träning
-    train_vader_data = vader_data(
-        cfg.vader_parametrar,
-        cfg.train_start,
-        cfg.train_slut,
-        cfg.vaderstation_id,
-        cfg.vader_api,
-        cfg.train_vader,
-    )
-
-    generate_csv(train_vader_data, cfg.train_vader)
-
-    log.info("Träningsdata för väder har hämtats och sparats.")
-
-    # 2C. Sammanfoga träningsdata
-    merge_df_and_generate_csv(
         cfg.train_pm25,
         cfg.train_vader,
-        "tid",
         cfg.train_merged,
-        False,
+        "Träningsdata",
     )
-
-    log.info("Träningsdata för PM2.5 och väder har sammanfogats.")
-
-    
-    # 3. VALIDERINGSDATA: Hämta och sammanfoga
-    
-
-    # 3A. Hämta PM2.5-valideringsdata
-    val_pm_data = hamta_pm25(
+ 
+    fetch_and_merge(
+        cfg,
         cfg.validering_start,
         cfg.validering_slut,
-        cfg.pm25_tidsserie_id,
-        cfg.luft_api,
-        cfg.val_pm25,
-    )
-
-    generate_csv(val_pm_data, cfg.val_pm25)
-
-    log.info("Valideringsdata för PM2.5 har hämtats och sparats.")
-
-    # 3B. Hämta väderdata för validering
-    val_vader_data = vader_data(
-        cfg.vader_parametrar,
-        cfg.validering_start,
-        cfg.validering_slut,
-        cfg.vaderstation_id,
-        cfg.vader_api,
-        cfg.val_vader,
-    )
-
-    generate_csv(val_vader_data, cfg.val_vader)
-
-    log.info("Valideringsdata för väder har hämtats och sparats.")
-
-    # 3C. Sammanfoga valideringsdata
-    merge_df_and_generate_csv(
         cfg.val_pm25,
         cfg.val_vader,
-        "tid",
         cfg.val_merged,
-        False,
+        "Valideringsdata",
     )
-
-    log.info("Valideringsdata för PM2.5 och väder har sammanfogats.")
 
     
     # 4. VALIDERING, FEATURE ENGINEERING OCH SPARANDE
