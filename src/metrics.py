@@ -237,6 +237,7 @@ def jamfor_championer(
     forskjuten_namn: str,
     test_path_vanlig,
     test_path_forskjuten,
+    high_pm25_threshold: float | None = None,
 ):
     """
     Head-to-head på TEST-data: den nuvarande championen mot den förskjuna
@@ -321,18 +322,21 @@ def jamfor_championer(
     }
 
     rader = []
+
     for namn, y_pred in prediktioner.items():
-        resultat = evaluate_model(y, y_pred)
-        rader.append(
-            {
-                "timestamp": datetime.now().isoformat(timespec="seconds"),
-                "Modell": namn,
-                "MAE": resultat["MAE"],
-                "RMSE": resultat["RMSE"],
-                "R2": resultat["R2"],
-                "rader": len(champion_rader),
-            }
+
+        resultat = evaluate_model(
+            y,
+            y_pred,
+            threshold=high_pm25_threshold,
         )
+
+        rader.append({
+            "timestamp": datetime.now().isoformat(timespec="seconds"),
+            "Modell": namn,
+            **resultat,
+            "rader": len(champion_rader),
+        })
 
     jamfordelse_df = pd.DataFrame(rader)
     display_df(jamfordelse_df)

@@ -1,7 +1,9 @@
 import pytest
 import pandas as pd
 
-from src.metrics import evaluate_model, build_comparison_table, select_best_model
+from types import SimpleNamespace
+
+from src.metrics import evaluate_model, build_comparison_table, select_best_model, jamfor_championer
 
 
 def test_evaluate_model_without_threshold():
@@ -187,3 +189,134 @@ def test_build_comparison_table_sort_bias():
         "Persistence Baseline",
         "Model A",
     ]
+
+
+def test_jamfor_championer_med_high_pm25(tmp_path, monkeypatch):
+
+    class DummyModel:
+        def predict(self, X):
+            return X["pm25"].to_numpy() + 2
+
+    # Två testfiler med samma tidpunkter
+    df = pd.DataFrame({
+        "tid": ["2026-06-01 00:00", "2026-06-01 01:00",
+                "2026-06-01 02:00"],
+        "pm25": [10, 30, 50],
+        "target": [12, 32, 52],
+    })
+
+    vanlig_path = tmp_path / "vanlig.csv"
+    forskjuten_path = tmp_path / "forskjuten.csv"
+
+    df.to_csv(vanlig_path, index=False)
+    df.to_csv(forskjuten_path, index=False)
+
+    cfg = SimpleNamespace(
+        features=["pm25"],
+        target_column="target",
+        jamfordelse_log=tmp_path / "jamfordelse.csv",
+    )
+
+    # Fånga resultatet utan att skriva någon riktig logg
+    sparade_resultat = []
+
+    monkeypatch.setattr(
+        "src.metrics.append_jamfordelse_log",
+        lambda path, df: sparade_resultat.append(df.copy()),
+    )
+
+    jamfor_championer(
+        cfg=cfg,
+        champion_modell=DummyModel(),
+        champion_namn="Champion",
+        forskjuten_modell=DummyModel(),
+        forskjuten_namn="Förskjuten",
+        test_path_vanlig=vanlig_path,
+        test_path_forskjuten=forskjuten_path,
+        high_pm25_threshold=40,
+    )
+
+    assert len(sparade_resultat) == 1
+
+    resultat = sparade_resultat[0]
+
+    # Tre modeller ska jämföras
+    assert len(resultat) == 3
+
+    # Kontrollera att de nya måtten finns
+    assert "Bias" in resultat.columns
+    assert "High PM2.5 MAE" in resultat.columns
+    assert "High PM2.5 Bias" in resultat.columns
+    assert "High PM2.5 Count" in resultat.columns
+
+    # Bara ett faktiskt PM2.5-värde är >= 40
+    assert (resultat["High PM2.5 Count"] == 1).all()
+
+    # Persistence baseline underskattar med 2
+    baseline = resultat.loc[
+        resultat["Modell"] == "Persistence Baseline"
+    ].iloc[0]
+
+    assert baseline["Bias"] == pytest.approx(-2.0)
+    assert baseline["High PM2.5 MAE"] == pytest.approx(2.0)
+    assert baseline["High PM2.5 Bias"] == pytest.approx(-2.0)
+
+
+def test_jamfor_championer_utan_threshold(tmp_path, monkeypatch):
+
+    class DummyModel:
+        def predict(self, X):
+            return X["pm25"].to_numpy() + 2
+
+    df = pd.DataFrame({
+        "tid": ["2026-06-01 00:00", "2026-06-01 01:00"],
+        "pm25": [10, 30],
+        "target": [12, 32],
+    })
+
+    vanlig_path = tmp_path / "vanlig.csv"
+    forskjuten_path = tmp_path / "forskjuten.csv"
+
+    df.to_csv(vanlig_path, index=False)
+    df.to_csv(forskjuten_path, index=False)
+
+    cfg = SimpleNamespace(
+        features=["pm25"],
+        target_column="target",
+        jamfordelse_log=tmp_path / "jamfordelse.csv",
+    )
+
+    sparade_resultat = []
+
+    monkeypatch.setattr(
+        "src.metrics.append_jamfordelse_log",
+        lambda path, df: sparade_resultat.append(df.copy()),
+    )
+
+    # Observera att high_pm25_threshold INTE skickas med
+    jamfor_championer(
+        cfg=cfg,
+        champion_modell=DummyModel(),
+        champion_namn="Champion",
+        forskjuten_modell=DummyModel(),
+        forskjuten_namn="Förskjuten",
+        test_path_vanlig=vanlig_path,
+        test_path_forskjuten=forskjuten_path,
+    )
+
+    assert len(sparade_resultat) == 1
+
+    resultat = sparade_resultat[0]
+
+    assert len(resultat) == 3
+
+    # Grundläggande mått ska finnas
+    assert "MAE" in resultat.columns
+    assert "RMSE" in resultat.columns
+    assert "R2" in resultat.columns
+    assert "Bias" in resultat.columns
+
+    # Specialiserade mått kräver ett gränsvärde
+    assert "High PM2.5 MAE" not in resultat.columns
+    assert "High PM2.5 Bias" not in resultat.columns
+    assert "High PM2.5 Count" not in resultat.columns
