@@ -12,7 +12,6 @@ from src.io import (
     save_champion_model,
     append_champion_log,
     champion_is_fresh,
-    hamta_champion_modell,
     append_datakontroll_log,
 )
 from src.config import ProjectConfig, skapa_testvagar
@@ -33,8 +32,11 @@ from src.metrics import (
     build_comparison_table,
     display_df,
     jamfor_championer,
+    evaluate_model
 )
 from src.logger import setup_logger
+
+from src.champion import load_latest_champion, compete_with_champion
 
 
 log = setup_logger(__name__)
@@ -339,20 +341,63 @@ def orchestration(cfg: ProjectConfig):
                 results_df["Modell"] == best_name
             ].iloc[0]
 
-            champion_row = full_row
+            # Låt dagens bästa modell tävla mot den tidigare championen
+            # på samma testdata. Den tidigare championen tränas inte om.
+            old_model, old_name, old_file = load_latest_champion(
+                cfg.champion_log,
+                cfg.models_dir,
+            )
 
-            # save_champion_model returnerar sökvägen till .joblib-filen.
-            # Den loggas, så att championen kan läsas in igen senare.
-            modell_sokvag = save_champion_model(
-                model=trained_models[best_name],
-                model_name=best_name,
-                best_row=full_row,
-                models_dir=cfg.models_dir,
-                random_state=cfg.random_state,
+            winner, _ = compete_with_champion(
+                new_model=trained_models[best_name],
+                new_name=best_name,
+                old_model=old_model,
+                old_name=old_name,
+                test_path=testvagar["test_processed"],
+                features=cfg.features,
+                target=cfg.target_column,
                 metric=cfg.selection_metric,
             )
 
-            log.info("Champion-modellen %s har sparats.", best_name)
+            if winner == "new":
+                # Dagens modell vann och sparas som ny champion
+                champion_row = full_row
+
+                # save_champion_model returnerar sökvägen till .joblib-filen.
+                # Den loggas, så att championen kan läsas in igen senare.
+                modell_sokvag = save_champion_model(
+                    model=trained_models[best_name],
+                    model_name=best_name,
+                    best_row=full_row,
+                    models_dir=cfg.models_dir,
+                    random_state=cfg.random_state,
+                    metric=cfg.selection_metric,
+                )
+
+                log.info("Champion-modellen %s har sparats.", best_name)
+
+            else:
+                # Den tidigare championen vann. Ingen ny modell sparas, men
+                # championen loggas igen med dagens datum, så att
+                # champion_is_fresh inte tränar om vid varje körning.
+                best_name = old_name
+                modell_sokvag = old_file
+
+                # Räkna ut den tidigare championens resultat på dagens
+                # valideringsdata, så att poängen i loggen går att jämföra.
+                # Hit kommer vi bara om det fanns en tidigare champion,
+                # eftersom compete_with_champion annars returnerar "new".
+                assert old_model is not None
+                old_val = evaluate_model(y_val, old_model.predict(X_val))
+                champion_row = pd.Series({
+                    "Modell": old_name,
+                    "Validation MAE": old_val["MAE"],
+                    "Validation RMSE": old_val["RMSE"],
+                    "Validation R²": old_val["R2"],
+                    "Validation Bias": old_val["Bias"],
+                })
+
+                log.info("Den tidigare championen %s behålls.", old_name)
 
         champion_df = champion_row.to_frame().T
 
@@ -484,35 +529,86 @@ def orchestration(cfg: ProjectConfig):
                 results_df["Modell"] == best_name
             ].iloc[0]
 
-            champion_row = full_row
-            # save_champion_model returnerar sökvägen till .joblib-filen.
-            # Den loggas, så att championen kan läsas in igen senare.
-            modell_sokvag = save_champion_model(
-                model=trained_models[best_name],
-                model_name=forskjuten_namn,
-                best_row=full_row,
-                models_dir=cfg.models_dir,
-                random_state=cfg.random_state,
-                metric=cfg.selection_metric,
-                filprefix="forskjuten_",
+            # Låt dagens bästa förskjutna modell tävla mot den tidigare
+            # förskjutna championen på samma testdata. Den tidigare
+            # championen tränas inte om.
+            old_model, old_name, old_file = load_latest_champion(
+                cfg.forskjuten_log,
+                cfg.models_dir,
             )
 
-            log.info("Förskjuten champion %s har sparats.", forskjuten_namn)
+            winner, _ = compete_with_champion(
+                new_model=trained_models[best_name],
+                new_name=forskjuten_namn,
+                old_model=old_model,
+                old_name=old_name,
+                test_path=testvagar["test_processed_forskjuten"],
+                features=cfg.features,
+                target=cfg.target_column,
+                metric=cfg.selection_metric,
+            )
+
+            if winner == "new":
+                # Dagens modell vann och sparas som ny förskjuten champion
+                champion_row = full_row
+                forskjuten_modell = trained_models[best_name]
+
+                # save_champion_model returnerar sökvägen till .joblib-filen.
+                # Den loggas, så att championen kan läsas in igen senare.
+                modell_sokvag = save_champion_model(
+                    model=forskjuten_modell,
+                    model_name=forskjuten_namn,
+                    best_row=full_row,
+                    models_dir=cfg.models_dir,
+                    random_state=cfg.random_state,
+                    metric=cfg.selection_metric,
+                    filprefix="forskjuten_",
+                )
+
+                log.info("Förskjuten champion %s har sparats.", forskjuten_namn)
+
+            else:
+                # Den tidigare förskjutna championen vann. Ingen ny modell
+                # sparas, men championen loggas igen med dagens datum, så att
+                # champion_is_fresh inte tränar om vid varje körning.
+                # Hit kommer vi bara om det fanns en tidigare champion,
+                # eftersom compete_with_champion annars returnerar "new".
+                assert old_model is not None
+                best_name = old_name
+                forskjuten_namn = old_name
+                forskjuten_modell = old_model
+                modell_sokvag = old_file
+
+                # Räkna ut den tidigare championens resultat på dagens
+                # valideringsdata, så att poängen i loggen går att jämföra.
+                old_val = evaluate_model(y_val, old_model.predict(X_val))
+                champion_row = pd.Series({
+                    "Modell": old_name,
+                    "Validation MAE": old_val["MAE"],
+                    "Validation RMSE": old_val["RMSE"],
+                    "Validation R²": old_val["R2"],
+                    "Validation Bias": old_val["Bias"],
+                })
+
+                log.info("Den tidigare förskjutna championen %s behålls.", old_name)
 
             # 6D. Head-to-head mot championen på TEST-data, på de
             # rader som är kompletta i båda varianterna
             # (informationellt – båda linjerna behålls och båda ska
             # användas för live-prediktioner senare).
-            champion_modell, champion_namn = hamta_champion_modell(
-                cfg.models_dir,
+            
+            # Den vanliga championen läses in via sökvägen i loggen.
+            # Den förskjutna championen är den som vann tävlingen ovan.
+            champion_modell, champion_namn, _ = load_latest_champion(
                 cfg.champion_log,
+                cfg.models_dir,
             )
 
             jamfor_championer(
                 cfg,
                 champion_modell=champion_modell,
                 champion_namn=champion_namn,
-                forskjuten_modell=trained_models[best_name],
+                forskjuten_modell=forskjuten_modell,
                 forskjuten_namn=forskjuten_namn,
                 test_path_vanlig=testvagar["test_processed"],
                 test_path_forskjuten=testvagar["test_processed_forskjuten"],
