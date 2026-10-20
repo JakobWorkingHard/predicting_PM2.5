@@ -31,7 +31,7 @@ from src.logger import setup_logger
 
 from src.champion import load_latest_champion, compete_with_champion
 
-from src.data_pipeline import fetch_and_merge, fetch_and_merge_test
+from src.data_pipeline import fetch_and_merge, fetch_and_merge_test, build_processed_datasets
 
 log = setup_logger(__name__)
 
@@ -64,79 +64,9 @@ def orchestration(cfg: ProjectConfig):
         "Valideringsdata",
     )
 
-
-
-
-    
-    # 4. VALIDERING, FEATURE ENGINEERING OCH SPARANDE
-    
-    # Läs in de sammanfogade dataseten
-    train_merged_df = pd.read_csv(cfg.train_merged)
-    val_merged_df = pd.read_csv(cfg.val_merged)
-    test_merged_df = pd.read_csv(testvagar["test_merged"])
-
-    # Samla alla dataset som ska bearbetas. mal_vader=True innebär att
-    # väderkolumnerna ersätts med måltidsväder: vädrets värde på rad T
-    # kommer från T + horisont, dvs. när PM2.5-målet realiseras.
-    merged_data = {
-        (cfg.train_processed, False): train_merged_df,
-        (cfg.val_processed, False): val_merged_df,
-        (testvagar["test_processed"], False): test_merged_df,
-        (cfg.train_processed_forskjuten, True): train_merged_df,
-        (cfg.val_processed_forskjuten, True): val_merged_df,
-        (testvagar["test_processed_forskjuten"], True): test_merged_df,
-    }
-
-    for (output_path, mal_vader), merged_df in merged_data.items():
-        log.info("Bearbetar dataset: %s", output_path.name)
-
-        antal_merged = len(merged_df)
-
-        # Validera data
-        df = validate_data(merged_df)
-
-        antal_validerad = len(df)
-
-        if mal_vader:
-            # Vindriktning skiftas FÖRE add_wind_features, så att vind_sin/
-            # vind_cos räknas ur måltids-vindriktningen. Skiftet använder
-            # alltid horisonten: måltiden är T + horisont, samma som mål-
-            # skiftet, så vädret och målet kan aldrig hamnar ur fas.
-            df = ersatt_vader_med_maltidsvader(
-                df,
-                cfg.forskjuten_vaderkolumner,
-                cfg.horisont,
-            )
-
-        # Skapa features
-        df = add_wind_features(df)
-        df = add_time_features(df, cfg.horisont)
-
-        # Skapa målvariabel: PM2.5 ett antal timmar framåt
-        df[cfg.target_column] = df["pm25"].shift(-cfg.horisont)
-
-        # Behåll endast kompletta modellrader
-        modellkolumner = list(cfg.features) + [cfg.target_column]
-        saknade = df[modellkolumner].isna().sum()
-
-        df = df.dropna(subset=modellkolumner)
-
-        # Logga datakontroll
-        append_datakontroll_log(
-            cfg.datakontroll_log,
-            output_path.name,
-            antal_merged,
-            antal_validerad,
-            len(df),
-            saknade,
-        )
-
-        # Spara bearbetat dataset
-        cfg.processed_dir.mkdir(parents=True, exist_ok=True)
-        generate_csv(df, output_path, index=False)
-
-        log.info("Bearbetat dataset har sparats: %s", output_path.name)
-
+   
+    # 3. VALIDERING, FEATURE ENGINEERING OCH SPARANDE
+    build_processed_datasets(cfg, testvagar=testvagar)
     
     # 5. CHAMPION-CHECK
     
