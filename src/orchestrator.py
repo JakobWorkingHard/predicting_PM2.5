@@ -1,20 +1,13 @@
 import pandas as pd
 
-from src.extracting_data import (
-    hamta_pm25,
-    vader_data,
-    hamta_testperiod,
-    hamta_test_vader,
-)
 from src.io import (
     generate_csv,
-    merge_df_and_generate_csv,
     save_champion_model,
     append_champion_log,
     champion_is_fresh,
     append_datakontroll_log,
 )
-from src.config import ProjectConfig, skapa_testvagar
+from src.config import ProjectConfig
 from src.validate_process import validate_data
 from src.features import (
     add_wind_features,
@@ -38,7 +31,7 @@ from src.logger import setup_logger
 
 from src.champion import load_latest_champion, compete_with_champion
 
-from src.data_pipeline import fetch_and_merge
+from src.data_pipeline import fetch_and_merge, fetch_and_merge_test
 
 log = setup_logger(__name__)
 
@@ -48,61 +41,7 @@ def orchestration(cfg: ProjectConfig):
 
     
     # 1. TESTDATA: Hämta och sammanfoga
-    
-
-    # 1A. Beräkna testperioden dynamiskt
-    test_start, test_slut = hamta_testperiod(
-        cfg.vaderstation_id,
-        cfg.vader_api,
-    )
-
-    log.info(
-        "Dynamisk testperiod: %s till %s",
-        test_start,
-        test_slut,
-    )
-
-    # 1B. Skapa sökvägar för testfilerna
-    testvagar = skapa_testvagar(cfg, test_start, test_slut)
-
-    # 1C. Hämta PM2.5-testdata
-    test_pm_data = hamta_pm25(
-        test_start,
-        test_slut,
-        cfg.pm25_tidsserie_id,
-        cfg.luft_api,
-        testvagar["test_pm25"],
-    )
-
-    generate_csv(test_pm_data, testvagar["test_pm25"])
-
-    log.info("PM2.5-testdata har hämtats och sparats.")
-
-    # 1D. Hämta vädertestdata
-    test_vader_data = hamta_test_vader(
-        parametrar=cfg.vader_parametrar,
-        test_start=test_start,
-        test_slut=test_slut,
-        station_id=cfg.vaderstation_id,
-        VADER_API=cfg.vader_api,
-    )
-
-    generate_csv(test_vader_data, testvagar["test_vader"])
-
-    log.info("Vädertestdata har hämtats och sparats.")
-
-    # 1E. Sammanfoga PM2.5- och väderdata för testperioden
-    merge_df_and_generate_csv(
-        testvagar["test_pm25"],
-        testvagar["test_vader"],
-        "tid",
-        testvagar["test_merged"],
-        False,
-    )
-
-    log.info("Testdata för PM2.5 och väder har sammanfogats.")
-
-
+    testvagar = fetch_and_merge_test(cfg)
     
     # 2. Hämta och sammanfoga data
     fetch_and_merge(
@@ -124,6 +63,9 @@ def orchestration(cfg: ProjectConfig):
         cfg.val_merged,
         "Valideringsdata",
     )
+
+
+
 
     
     # 4. VALIDERING, FEATURE ENGINEERING OCH SPARANDE
