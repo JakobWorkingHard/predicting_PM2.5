@@ -7,10 +7,10 @@ merged_dir = "data/merged"        # Mergad raw data
 validated_dir = "data/validated"  # validerad data, inte interpolerad
 processed_dir = "data/processed"  # rensad data, skapas av koden, versionshanteras inte
 models_dir = "models"
-champion_log = "logs/champion_log.csv"  # historik: vinnande modell + timestamp per körning
-forskjuten_log = "logs/forskjuten_log.csv"  # egen logg för förskjuna championer (måltidsväder) – HÅLLS SKILT från champion_log så champion_is_fresh inte påverkas
+champion_log = "logs/champion_vanlig.csv"  # championer för den vanliga linjen: vinnande modell, timestamp och modellfil per körning
+forskjuten_log = "logs/champion_forskjuten.csv"  # championer för den förskjutna linjen (måltidsväder). Hålls skild från champion_log, så att champion_is_fresh inte påverkas
 datakontroll_log = "logs/datakontroll.csv"
-jamfordelse_log = "logs/jamfordelse_forskjuten.csv"  # head-to-head: champion vs förskjuten champion vs baseline
+jamfordelse_log = "logs/jamforelse_champion.csv"  # de två championerna och baslinjen mot varandra på testdatan
 
 [paths.filenames]
 # {}-placeholders ersätts i config.py med värden från TOML
@@ -36,11 +36,6 @@ test_vader = "test_{vaderstation}_{test_start}_{test_slut}_vaderstationid_{vader
 test_merged = "test_merged_{test_start}_{test_slut}_pm25tidsserie_{pm25_tidsserie_id}_vaderstationid_{vaderstation_id}.csv"
 test_validated = "test_validated_{test_start}_{test_slut}.csv"
 test_processed = "test_processed_{test_start}_{test_slut}.csv"
-
-
-
-
-
 
 [api]
 luft = "https://datavardluft.smhi.se/52North/api"

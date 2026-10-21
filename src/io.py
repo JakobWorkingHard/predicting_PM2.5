@@ -104,7 +104,7 @@ def append_champion_log(log_path, model_name, metric, score, sokvag=None):
     Parametrar
     ----------
     log_path : Path
-        Sökväg till loggfilen, t.ex. "logs/champion_log.csv".
+        Sökväg till loggfilen, t.ex. "logs/champion_vanlig.csv".
     model_name : str
         Namn på vinnaren, t.ex. "Linear Regression" eller
         "Persistence Baseline" (om baslinjen vann räknas det som en giltig
@@ -152,7 +152,7 @@ def champion_is_fresh(log_path, antal_dagar) -> bool:
     Parametrar
     ----------
     log_path : Path
-        Sökväg till loggfilen, t.ex. "logs/champion_log.csv".
+        Sökväg till loggfilen, t.ex. "logs/champion_vanlig.csv".
     antal_dagar : int
         Maximal ålder i dagar för att champion ska räknas som färsk.
     """
@@ -237,7 +237,7 @@ def append_jamfordelse_log(log_path, df):
     Parametrar
     ----------
     log_path : Path
-        Sökväg till loggfilen, t.ex. "logs/jamfordelse_forskjuten.csv".
+        Sökväg till loggfilen, t.ex. "logs/jamforelse_champion.csv".
     df : pd.DataFrame
         Rader att appenda, t.ex. en rad per modell i jämförelsen.
     """

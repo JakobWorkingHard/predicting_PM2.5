@@ -249,7 +249,7 @@ def jamfor_championer(
     och den förskjuna modellen från sin (vädret gäller T+6). Raderna
     matchas via kolumnen 'tid'.
 
-    Resultatet visas och appendas till logs/jamfordelse_forskjuten.csv.
+    Resultatet visas och appendas till logs/jamforelse_champion.csv.
     Observera: den förskjuna modellen utvärderas här med OBSERVERAT väder
     vid T+6 ("orakelprognos"), vilket ger ett övre gräns-värde – i
     produktion tillkommer prognosfel (se docs/evaluation.md).
