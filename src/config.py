@@ -4,6 +4,9 @@ import tomllib
 import pandas as pd
 
 
+
+
+
 @dataclass(frozen=True)
 class ProjectConfig:
     # Mappar
@@ -78,6 +81,8 @@ class ProjectConfig:
     
 
 def load_config(PATH_CONFIG_TOML: Path, PATH_PROJECT_ROOT: Path ) -> ProjectConfig:
+    from src.extracting_data import hamta_senaste_arkivtid
+
     with open(PATH_CONFIG_TOML, "rb") as f:
         raw = tomllib.load(f)
 
@@ -104,12 +109,41 @@ def load_config(PATH_CONFIG_TOML: Path, PATH_PROJECT_ROOT: Path ) -> ProjectConf
     # Råvärden
     pm25_station = pm25["namn"]
     vaderstation = vader["namn"]
+
+    # Fast startdatum för PM2.5-serien
     train_start = t["train_start"]
-    train_slut = t["train_slut"]
+
+    # Stations- och tidsserie-ID
     pm25_tidsserie_id = pm25["tidsserie_id"]
     vaderstation_id = vader["id"]
-    validering_start = t["validering_start"]
-    validering_slut = t["validering_slut"]
+
+    # Hämta senaste tillgängliga arkivtidpunkt
+    senaste_arkivtid = hamta_senaste_arkivtid(
+        parametrar=vader["parametrar"],
+        station_id=vaderstation_id,
+        VADER_API=api["vader"],
+    )
+
+    # Beräkna dynamiska tränings- och valideringsperioder
+    perioder = berakna_tranings_och_valideringsperiod(
+        senaste_arkivtid=senaste_arkivtid,
+        train_start=train_start,
+    )
+
+    train_slut = perioder["train_slut"]
+    validering_start = perioder["validering_start"]
+    validering_slut = perioder["validering_slut"]
+
+    logiska_datum = {
+        "train_start": train_start,
+        "train_slut": train_slut,
+        "validering_start": validering_start,
+        "validering_slut": validering_slut,
+    }
+
+    print("\nDynamiskt beräknade datum:")
+    for namn, datum in logiska_datum.items():
+        print(f"{namn}: {datum}")
 
     # Värden för filnamnsmallar (stationsnamn sanerade, övriga oförändrade)
     fmt = {
@@ -176,8 +210,8 @@ def load_config(PATH_CONFIG_TOML: Path, PATH_PROJECT_ROOT: Path ) -> ProjectConf
         # Tidsperioder
         train_start=train_start,
         train_slut=train_slut,
-        validering_start=t["validering_start"],
-        validering_slut=t["validering_slut"],
+        validering_start=validering_start,
+        validering_slut=validering_slut,
         
 
         # PM2.5 Station
@@ -193,6 +227,45 @@ def load_config(PATH_CONFIG_TOML: Path, PATH_PROJECT_ROOT: Path ) -> ProjectConf
         vader_lon=vader["lon"],
         vader_parametrar=vader["parametrar"],
     )
+
+def berakna_tranings_och_valideringsperiod(
+    senaste_arkivtid: pd.Timestamp,
+    train_start: str,
+) -> dict[str, str]:
+    """
+    Beräknar dynamiska tränings- och valideringsperioder.
+
+    Valideringen består av de tre senaste fullständiga
+    kalendermånaderna före den månad som latest_arcives tid tillhör.
+
+    Träningen slutar dagen före valideringsperiodens start.
+    """
+
+    # Början av månaden för den senaste arkivtidpunkten
+    aktuell_manad = senaste_arkivtid.normalize().replace(
+        day=1,
+        hour=0,
+        minute=0,
+        second=0,
+        microsecond=0,
+    )
+
+    # Valideringsperioden omfattar de tre föregående hela månaderna
+    validering_slut = aktuell_manad - pd.Timedelta(days=1)
+    validering_start = (
+        aktuell_manad - pd.DateOffset(months=3)
+    ).normalize()
+
+    # Träningen slutar dagen före valideringen börjar
+    train_slut = validering_start - pd.Timedelta(days=1)
+
+    return {
+        "train_start": train_start,
+        "train_slut": train_slut.strftime("%Y-%m-%d"),
+        "validering_start": validering_start.strftime("%Y-%m-%d"),
+        "validering_slut": validering_slut.strftime("%Y-%m-%d"),
+    }
+
 
 
 

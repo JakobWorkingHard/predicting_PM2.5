@@ -91,9 +91,7 @@ antal_dagar_sedan = 7  # förskjuten champion räknas som färsk om tränad inom
 
 [time]
 train_start = "2023-05-26"  # när PM2.5-tidsserien startade
-train_slut = "2025-12-31"
-validering_start = "2026-01-01"
-validering_slut = "2026-05-31"
+
 
 
 [station.pm25]

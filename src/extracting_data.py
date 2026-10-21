@@ -205,6 +205,41 @@ def hamta_vader_arkiv( parameter,station_id,VADER_API,csv_path=None,period="corr
         raise
 
 
+def hamta_senaste_arkivtid(
+    parametrar: dict,
+    station_id: int,
+    VADER_API: str,
+) -> pd.Timestamp:
+    """Hämtar den senaste tillgängliga tidpunkten i corrected-archive."""
+
+    senaste_tider = []
+
+    for namn, nummer in parametrar.items():
+        data = hamta_vader_arkiv(
+            parameter=nummer,
+            station_id=station_id,
+            VADER_API=VADER_API,
+            csv_path=None,
+            period="corrected-archive",
+        )
+
+        if not data.empty:
+            senaste_tider.append(data.index.max())
+            print(f"{namn}: senaste mätning {data.index.max()}")
+
+    if not senaste_tider:
+        raise ValueError(
+            "Hittade inga mätningar i corrected-archive."
+        )
+
+    return min(senaste_tider)
+
+
+
+
+
+
+
 
 def vader_data(parametrar, starttid, sluttid, station_id, VADER_API, csv_path, period="corrected-archive"):
     """Skapar dictionary av väderdata inhämtat via api med våra parametrar.
@@ -225,19 +260,23 @@ def vader_data(parametrar, starttid, sluttid, station_id, VADER_API, csv_path, p
 
 
 
-def hamta_testperiod(station_id: int, VADER_API: str) -> tuple[pd.Timestamp, pd.Timestamp]:
+def hamta_testperiod(
+    station_id: int,
+    VADER_API: str,
+    validering_slut: str,
+) -> tuple[pd.Timestamp, pd.Timestamp]:
     """
     Beräknar testperioden dynamiskt.
 
-    TEST_START:
-        Första tidsstämpeln i SMHI:s latest-months för lufttemperatur.
+    Teststart:
+        Första tillgängliga tidpunkt i latest-months efter
+        valideringsperiodens slut.
 
-    TEST_SLUT:
+    Testslut:
         Aktuell svensk tid minus fyra timmar, avrundad nedåt
         till närmaste hela timme.
     """
 
-    # Hämta SMHI:s senaste månader för lufttemperatur (parameter 1)
     url = (
         f"{VADER_API}/parameter/1/station/{station_id}"
         "/period/latest-months/data.csv"
@@ -246,7 +285,6 @@ def hamta_testperiod(station_id: int, VADER_API: str) -> tuple[pd.Timestamp, pd.
     svar = requests.get(url, timeout=120)
     svar.raise_for_status()
 
-    # Läs CSV-tabellen från raden som börjar med "Datum"
     rader = svar.text.splitlines()
     startrad = next(
         i for i, rad in enumerate(rader)
@@ -264,15 +302,30 @@ def hamta_testperiod(station_id: int, VADER_API: str) -> tuple[pd.Timestamp, pd.
     if df.empty:
         raise ValueError("SMHI returnerade ingen data för latest-months.")
 
-    # Första tidsstämpeln i SMHI:s svar
     tider = pd.to_datetime(
         df["datum"] + " " + df["tid_utc"],
         utc=True,
     ).dt.tz_convert("Europe/Stockholm")
 
-    test_start = tider.min()
+    # Valideringen slutar vid dagens slut i svensk tid.
+    validering_slut_tid = pd.Timestamp(
+        validering_slut,
+        tz="Europe/Stockholm",
+    ) + pd.Timedelta(days=1)
 
-    # Aktuell svensk tid minus fyra timmar
+    # Testen börjar vid första tillgängliga mätningen efter valideringen.
+    testtider = tider[tider >= validering_slut_tid]
+
+    if testtider.empty:
+        raise ValueError(
+            "Hittade inga testmätningar efter valideringsperiodens slut "
+            f"({validering_slut}). SMHI:s latest-months kan sakna "
+            "data för den önskade testperioden."
+        )
+
+    test_start = testtider.min()
+
+    # Aktuell svensk tid minus fyra timmar.
     nu = pd.Timestamp.now(tz="Europe/Stockholm")
     test_slut = (nu - pd.Timedelta(hours=4)).floor("h")
 
@@ -282,7 +335,6 @@ def hamta_testperiod(station_id: int, VADER_API: str) -> tuple[pd.Timestamp, pd.
         )
 
     return test_start, test_slut
-
 
 
 

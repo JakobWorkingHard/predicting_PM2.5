@@ -67,7 +67,12 @@ def fetch_and_merge_test(cfg):
     fyra timmar. Returnerar testvagar, en dict med sökvägarna till testfilerna. """ 
     
     # Beräkna testperioden och sökvägarna till testfilerna 
-    test_start, test_slut = hamta_testperiod(cfg.vaderstation_id, cfg.vader_api) 
+    test_start, test_slut = hamta_testperiod(
+    station_id=cfg.vaderstation_id,
+    VADER_API=cfg.vader_api,
+    validering_slut=cfg.validering_slut,
+    
+    ) 
     
     log.info("Dynamisk testperiod: %s till %s", test_start, test_slut)
     
