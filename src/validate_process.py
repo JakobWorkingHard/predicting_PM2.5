@@ -4,6 +4,17 @@ from src.logger import setup_logger
 
 log = setup_logger(__name__)
 
+# Gemensam källa för giltighetsintervall i väderdata (Lufttemperatur saknar
+# regel, precis som i huvudpipelinens replace_invalid_values). Missbrukas
+# av både tabellversionen (replace_invalid_values) och singelradsversionen
+# (sanity_kolla_vader) i live-flödet.
+VADER_INTERVALL = {
+    "Vindriktning": (0, 360),
+    "Vindhastighet": (0, None),
+    "Relativ luftfuktighet": (0, 100),
+    "Nederbördsmängd": (0, None),
+}
+
 def convert_datetime(df: pd.DataFrame) -> pd.DataFrame:
     """Konverterar kolumnen 'tid' till svensk timezone-aware datetime."""
     
@@ -64,42 +75,22 @@ def ensure_complete_timeline(df: pd.DataFrame) -> pd.DataFrame:
 
 def replace_invalid_values(df: pd.DataFrame) -> pd.DataFrame:
     """Ersätter uppenbart ogiltiga mätvärden med NaN."""
-
     df = df.copy()
 
     # PM2.5 kan inte vara negativt
     df.loc[df["pm25"] < 0, "pm25"] = pd.NA
 
-    # Vindhastighet kan inte vara negativ
-    df.loc[df["Vindhastighet"] < 0, "Vindhastighet"] = pd.NA
-
-    # Relativ luftfuktighet ska ligga mellan 0 och 100 %
-    df.loc[
-        (df["Relativ luftfuktighet"] < 0)
-        | (df["Relativ luftfuktighet"] > 100),
-        "Relativ luftfuktighet"
-    ] = pd.NA
-
-    # Nederbördsmängd kan inte vara negativ
-    df.loc[
-        df["Nederbördsmängd"] < 0,
-        "Nederbördsmängd"
-    ] = pd.NA
-
     # I SMHI:s data betyder 0° vindstilla och 360° nord.
     # För sin/cos är 0° och 360° samma vinkel, så 360° sätts till 0°.
     # Vindstilla hanteras i add_wind_features (Vindhastighet == 0).
-    df.loc[
-        df["Vindriktning"] == 360,
-        "Vindriktning"
-    ] = 0.0
+    df.loc[df["Vindriktning"] == 360, "Vindriktning"] = 0.0
 
-    # Övriga värden utanför intervallet 0–360° är ogiltiga
-    df.loc[
-        (df["Vindriktning"] < 0)
-        | (df["Vindriktning"] > 360),
-        "Vindriktning"
-    ] = pd.NA
+    # Giltighetsintervall per väderkolumn — reglerna lever i VADER_INTERVALL
+    for kolumn, (MIN, MAX) in VADER_INTERVALL.items():
+        ogiltig = df[kolumn] < MIN
+        if MAX is not None:
+            ogiltig = ogiltig | (df[kolumn] > MAX)
+        df.loc[ogiltig, kolumn] = pd.NA
 
     return df
 
@@ -151,3 +142,25 @@ def validate_data(df: pd.DataFrame) -> pd.DataFrame:
     )
 
     return df
+
+
+# Används av predict pipeline
+def sanity_kolla_vader(rad: pd.Series) -> pd.Series:
+    """
+    Intervallreglerna för en enskild rad väderdata (live-flödet):
+    ogiltigt -> NaN, 360 grader -> 0.
+
+    Exakt samma regler som replace_invalid_values tillämpar på hela
+    tabeller — båda bygger på VADER_INTERVALL. `rad` förväntas vara
+    en Series med väderkolumnerna; saknade värden (None/NaN) lämnas.
+    """
+    rad = rad.astype(float).copy()
+
+    if rad["Vindriktning"] == 360:
+        rad["Vindriktning"] = 0.0
+
+    for kolumn, (MIN, MAX) in VADER_INTERVALL.items():
+        if rad[kolumn] < MIN or (MAX is not None and rad[kolumn] > MAX):
+            rad[kolumn] = pd.NA
+
+    return rad

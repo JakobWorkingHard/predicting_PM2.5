@@ -41,7 +41,8 @@ def _validation_row(model, name, X_val, y_val):
 def run_model_line( cfg, line_label, train_path, val_path, test_path, log_path, antal_dagar, name_suffix="", filprefix="", ):
  
     """ Kör hela modellflödet för en modellinje (vanlig eller förskjuten): 
-    1. Hoppar över allt om championen är yngre än antal_dagar. 
+    1. Hoppar över allt om championen (med linjens horisont-suffix i
+    namnet) är yngre än antal_dagar. 
     2. Tränar alla modeller och jämför dem med baslinjen på valideringsdatan. 
     3. Låter dagens bästa modell tävla mot den tidigare championen på testdatan. 
     Den tidigare championen behålls om den är minst lika bra. 
@@ -50,7 +51,9 @@ def run_model_line( cfg, line_label, train_path, val_path, test_path, log_path, 
     Returnerar None om linjen hoppades över eller om baslinjen vann. """ 
  
     # 1. Är championen fortfarande färsk? 
-    if champion_is_fresh(log_path, antal_dagar): 
+    # Suffixet kopplar färskheten till rätt horisont — en " (T+1)"-rad
+    # kvalar aldrig in som färsk " (T+6)"-champion.
+    if champion_is_fresh(log_path, antal_dagar, namn_suffix=name_suffix): 
         champion_log = pd.read_csv(log_path) 
         log.info( "En befintlig %s champion är fortfarande aktuell. " 
                  "Tidpunkt: %s | Modell: %s | Mått: %s | Score: %s", 

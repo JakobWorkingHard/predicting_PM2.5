@@ -108,3 +108,32 @@ lat = 55.5715
 lon = 13.0708
 # Väder-Parametrar vi vill extrahera från vårt väder-api
 parametrar = { "Lufttemperatur" = 1, "Vindriktning" = 3, "Vindhastighet" = 4, "Relativ luftfuktighet" = 6, "Nederbördsmängd" = 7 }
+
+[live]
+# Live-prediktioner 
+# Prognos-URL:n formateras i config.py med väderstationens koordinater.
+prognos_dir = "prognoser"                             # rå-JSON + arkiv-CSV:n loggas här
+prediktioner_log = "prognoser/prediktioner_live.csv"  # en rad per predikterad linje per körning
+prognos_url = "https://opendata-download-metfcst.smhi.se/api/category/snow1g/version/1/geotype/point/lon/{LON}/lat/{LAT}/data.json"
+max_alder_timmar = 6   # hoppa över om T_obs (senaste komplette timmen) är äldre
+idempotent = true      # hoppa över om T_obs redan predikterats
+
+# ARKIV, EJ PREDIKTION: SMHIs punktprognos hämtas som rå-JSON med engelska
+# parameternycklar (t.ex. "air_temperature") och en prognosperiod längre än
+# projektet behöver. I minnet översätts nycklarna till vårt svenska
+# kolumnnamn-format ([live].prognos_parametrar styr omkodningen) och hela
+# prognosen returneras till pipelinen. Värdet här styr ENDAST arkiv-CSV:n:
+# de första "prognos_arkiv_timmar" timmarna – räknat från prognosens
+# referenstid och framåt i tiden – sparas som en trimmad kopia
+# (prognos_<referenstid>_24h.csv) bredvid den råa JSON:en, som alltid
+# arkiveras i sin helhet. Själva prediktionen påverkas aldrig: den läser
+# endast prognosraden vid T_obs + horisont ([model].horisont).
+prognos_arkiv_timmar = 24
+
+[live.prognos_parametrar]
+# Träningens väderkolumner -> prognosens parameternycklar (snow1g)
+"Lufttemperatur" = "air_temperature"
+"Vindriktning" = "wind_from_direction"
+"Vindhastighet" = "wind_speed"
+"Relativ luftfuktighet" = "relative_humidity"
+"Nederbördsmängd" = "precipitation_amount_mean"

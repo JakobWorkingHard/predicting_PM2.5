@@ -1,3 +1,4 @@
+import json
 import time
 import pandas as pd
 import requests
@@ -5,6 +6,12 @@ import io
 import os
 from datetime import datetime
 from zoneinfo import ZoneInfo
+
+from src.logger import setup_logger
+from src.config import ProjectConfig
+from src.io import generate_csv
+
+log = setup_logger()
 
 
 def till_svensk_tid(ms):
@@ -367,3 +374,154 @@ def hamta_test_vader(
         vader_delar[namn] = data.loc[test_start:test_slut, "varde"]
 
     return pd.DataFrame(vader_delar)
+
+
+
+# ANVÄNDS I PREDICT PIPELINE
+
+# 1. Hämta väderprognos
+def hamta_prognos(cfg: ProjectConfig) -> tuple[pd.DataFrame, pd.Timestamp]:
+    """
+    Hämtar SMHIs punktprognos och arkiverar rå-JSON + trimmad CSV i prognos_dir.
+
+    Returnerar hela prognos_df (svenska kolumnnamn enligt
+    cfg.prognos_parametrar, tz-medvetet index i svensk tid) och
+    prognosens referenstid (UTC).
+
+    API-svaret (snow1g punktprognos) ser ut ungefär så här (förkortat):
+
+        {
+          "createdTime": "2026-10-21T13:44:23Z",
+          "referenceTime": "2026-10-21T13:30:00Z",
+          "geometry": { "type": "Point", "coordinates": [...] },
+          "timeSeries": [
+            { "time": "2026-10-21T14:00:00Z",
+              "data": { "air_temperature": 11.5,
+                        "wind_from_direction": 123,
+                        "wind_speed": 3.4,
+                        "relative_humidity": 95,
+                        "precipitation_amount_mean": 0.1,
+                        ... ca 20 parametrar till } },
+            ... ett timsteg per element, totalt ca 83 steg
+          ]
+        }
+    """
+    log.info("Hämtar SMHI-punktprognos...")
+    svar = requests.get(cfg.prognos_url, timeout=60)
+    svar.raise_for_status()
+    prognos_json = svar.json()
+
+    referenstid = pd.to_datetime(prognos_json["referenceTime"], utc=True)
+
+    # Arkiv: rå-JSON skrivs endast om den saknas
+    # (samma referenstid = samma prognos, ingen ny fil behövs)
+    cfg.prognos_dir.mkdir(parents=True, exist_ok=True)
+    namn = f"prognos_{referenstid:%Y-%m-%dT%H%M}_utc"
+    ra_sokvag = cfg.prognos_dir / (namn + ".json")
+    if not ra_sokvag.is_file():
+        with open(ra_sokvag, "w", encoding="utf-8") as f:
+            json.dump(prognos_json, f, ensure_ascii=False)
+
+    # Omformning: nästlad JSON -> rader.
+    # Loopen har ett enda jobb: plocka ut tidssträngen (rå) +
+    # våra parametervärden (mappade och omdöpta, saknade -> None).
+    rader = []
+    for steg in prognos_json["timeSeries"]:
+        rad = {"tid": steg["time"]}
+        for kolumn, nyckel in cfg.prognos_parametrar.items():
+            rad[kolumn] = steg["data"].get(nyckel)
+        rader.append(rad)
+
+    # Tidskonvertering: en gång, vektoriserad på kolumnnivå
+    prognos_df = pd.DataFrame(rader)
+    prognos_df["tid"] = pd.to_datetime(
+        prognos_df["tid"], utc=True
+    ).dt.tz_convert("Europe/Stockholm")
+    prognos_df = prognos_df.set_index("tid").sort_index()
+
+    # Arkiv: trimmad CSV, de första prognos_arkiv_timmar stegen
+    # från referenstiden och framåt (ARKIV, EJ PREDIKTION)
+    prognos_df.head(cfg.prognos_arkiv_timmar).to_csv(
+        cfg.prognos_dir / f"{namn}_{cfg.prognos_arkiv_timmar}h.csv"
+    )
+
+    log.info(
+        "Prognos hämtad: referenstid %s, %d steg fram till %s.",
+        referenstid,
+        len(prognos_df),
+        prognos_df.index.max(),
+    )
+    return prognos_df, referenstid
+
+
+# 2. Hämta färsk pm2.5 data
+def hamta_senaste_pm25(cfg, timmar_bak: int = 48):
+    """
+    Färska PM2.5-mätningar för live-prediktion.
+
+    Hämtar de senaste `timmar_bak` timmarna fram till nu och sparar
+    hämtningen i pm25-arkivet under prognosmappen. Den timestampade
+    sökvägen är unik per körning, vilket tvingar fram ny data —
+    hamta_pm25 cachar annars på befintliga sökvägar.
+
+    Notera att hamta_pm25 aldrig skriver csv_path själv (i huvudpipelinen
+    är det den anropande koden som sparar) — därför sparas hämtningen här
+    via generate_csv så att pm25-arkivet faktiskt fylls.
+    """
+    nu = pd.Timestamp.now(tz="Europe/Stockholm")
+    csv_path = cfg.prognos_dir / "pm25" / f"pm25_{nu:%Y%m%dT%H%M%S}.csv"
+    csv_path.parent.mkdir(parents=True, exist_ok=True)
+
+    pm25_df = hamta_pm25(
+        nu - pd.Timedelta(hours=timmar_bak),
+        nu,
+        cfg.pm25_tidsserie_id,
+        cfg.luft_api,
+        str(csv_path),
+    )
+
+    generate_csv(pm25_df, csv_path)
+
+    log.info(
+        "Senaste PM2.5 hämtad: %d rader, senaste %d timmarna.",
+        len(pm25_df),
+        timmar_bak,
+    )
+
+    return pm25_df
+
+
+
+# 3. Hämta färsk väderdata
+def hamta_senaste_vaderobs(cfg, timmar_bak: int = 48) -> pd.DataFrame:
+    """
+    Färska väderobservationer för live-prediktion (latest-months).
+
+    Hämtar de senaste `timmar_bak` timmarna fram till och med nu.
+    cachar aldrig (hamta_test_vader går alltid ut mot API:et), så här
+    behövs ingen timestampad sökväg — till skillnad från hamta_senaste_pm25.
+
+    Viktigt: slut är `nu`, INTE nu minus 4 h. Den 4-timmarsgapet i
+    hamta_testperiod gäller bara testdatan. Publikationslagget löser
+    sig självt senare i flödet: bestam_ankarpunkt väljer ändå bara
+    den senaste hela timme med komplett data, och vakten
+    max_alder_timmar skyddar mot för gammal data.
+    """
+    nu = pd.Timestamp.now(tz="Europe/Stockholm")
+
+    vaderobs_df = hamta_test_vader(
+        parametrar=cfg.vader_parametrar,
+        test_start=nu - pd.Timedelta(hours=timmar_bak),
+        test_slut=nu,
+        station_id=cfg.vaderstation_id,
+        VADER_API=cfg.vader_api,
+    )
+
+    # Nyttjar att parametrarna delar heltimmesindex: en rad per timme
+    log.info(
+        "Senaste väderobservationer hämtade: %d timmar, %d parametrar.",
+        len(vaderobs_df),
+        vaderobs_df.shape[1],
+    )
+
+    return vaderobs_df
