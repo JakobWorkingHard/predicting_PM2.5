@@ -1,0 +1,2 @@
+modell,timestamp,metric,score,sokvag
+SVR vanlig (T+6),2026-10-22T09:32:30.180730,Validation R²,0.3992065096524583,svr_vanlig_(t+6)_Validation_R2_2026_10_22_09-32.joblib
