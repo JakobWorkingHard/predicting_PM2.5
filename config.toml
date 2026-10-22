@@ -49,7 +49,9 @@ horisont = 6 # Prognosshorisont i timmar
 #   "Validation RMSE"     (lägre är bättre)
 #   "Validation R²"       (högre är bättre)
 #   "Validation MSE"      (lägre är bättre)
-selection_metric = "Validation R²" 
+candidate_selection_metric = "Validation MAE"
+champion_selection_metric = "Validation R²"
+
 random_state = 42
 antal_dagar_sedan = 7  # champion räknas som färsk om tränad inom detta antal dagar
 target_column = "target"        # namn på målvariabeln i processade filer

@@ -48,7 +48,8 @@ class ProjectConfig:
     # Modell
     horisont: int
     features: list
-    selection_metric: str
+    candidate_selection_metric: str
+    champion_selection_metric: str
     random_state: int
     target_column: str
     antal_dagar_sedan: int
@@ -237,7 +238,8 @@ def load_config(PATH_CONFIG_TOML: Path, PATH_PROJECT_ROOT: Path ) -> ProjectConf
         # Modell
         horisont=mod["horisont"],
         features=mod["features"]["columns"],
-        selection_metric=mod["selection_metric"],
+        candidate_selection_metric=mod["candidate_selection_metric"],
+        champion_selection_metric=mod["champion_selection_metric"],
         random_state=mod["random_state"],
         target_column=mod["target_column"],
         antal_dagar_sedan=mod["antal_dagar_sedan"],
