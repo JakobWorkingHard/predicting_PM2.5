@@ -72,6 +72,15 @@ class ProjectConfig:
     vader_lon: float
     vader_parametrar: dict
 
+    # Live-prediktioner
+    prognos_dir: Path
+    prediktioner_log: Path
+    prognos_url: str           # färdig formaterad: väderstationens lon/lat insatta
+    prognos_arkiv_timmar: int   # ARKIV, EJ PREDIKTION: trimmad arkiv-CSV:n i prognos_dir
+    max_alder_timmar: int
+    idempotent: bool
+    prognos_parametrar: dict
+
     # Testdata – sökvägar skapas när testperioden har beräknats
     test_pm25: Path | None = None
     test_vader: Path | None = None
@@ -94,6 +103,7 @@ def load_config(PATH_CONFIG_TOML: Path, PATH_PROJECT_ROOT: Path ) -> ProjectConf
     t = raw["time"]
     pm25 = raw["station"]["pm25"]
     vader = raw["station"]["vader"]
+    live = raw["live"]
 
     # Baskataloger
     raw_dir = PATH_PROJECT_ROOT / p["raw_dir"]
@@ -101,10 +111,35 @@ def load_config(PATH_CONFIG_TOML: Path, PATH_PROJECT_ROOT: Path ) -> ProjectConf
     validated_dir = PATH_PROJECT_ROOT / p["validated_dir"]                      
     processed_dir = PATH_PROJECT_ROOT / p["processed_dir"]
     models_dir=PATH_PROJECT_ROOT / p["models_dir"]
+
+    # Skapa datakatalogerna (inkl. data/) om de saknas – t.ex. vid fresh
+    # clone, eftersom data/ är gitignored. parents=True skapar huvudkatalogen
+    # data/ automatiskt. Sker innan något API-anrop görs (se hamta_senaste_arkivtid
+    # längre ner), så katalogerna finns på plats oavsett hur API-hämtningen går.
+    for katalog in (raw_dir, merged_dir, validated_dir, processed_dir):
+        katalog.mkdir(parents=True, exist_ok=True)
     champion_log = PATH_PROJECT_ROOT / p["champion_log"]
     forskjuten_log = PATH_PROJECT_ROOT / p["forskjuten_log"]
     datakontroll_log = PATH_PROJECT_ROOT / p["datakontroll_log"]
     jamfordelse_log = PATH_PROJECT_ROOT / p["jamfordelse_log"]
+
+    # Live-prediktioner
+    prognos_dir = PATH_PROJECT_ROOT / live["prognos_dir"]
+    prediktioner_log = PATH_PROJECT_ROOT / live["prediktioner_log"]
+    prognos_url = live["prognos_url"].format(LON=vader["lon"], LAT=vader["lat"])
+    prognos_parametrar = live["prognos_parametrar"]
+
+    # Sanity: prognosparametrarna måste mappa samma väderkolumner som
+    # träningen använder, annars glider live och träning isär.
+    for kalla, kolumner in (
+        ("[model.forskjuten].vaderkolumner", fork["vaderkolumner"]),
+        ("[station.vader].parametrar", list(vader["parametrar"])),
+    ):
+        if sorted(prognos_parametrar) != sorted(kolumner):
+            raise ValueError(
+                f"[live].prognos_parametrar matchar inte {kalla}: "
+                f"{sorted(prognos_parametrar)} != {sorted(kolumner)}"
+            )
 
     # Råvärden
     pm25_station = pm25["namn"]
@@ -226,6 +261,15 @@ def load_config(PATH_CONFIG_TOML: Path, PATH_PROJECT_ROOT: Path ) -> ProjectConf
         vader_lat=vader["lat"],
         vader_lon=vader["lon"],
         vader_parametrar=vader["parametrar"],
+
+        # Live-prediktioner
+        prognos_dir=prognos_dir,
+        prediktioner_log=prediktioner_log,
+        prognos_url=prognos_url,
+        prognos_arkiv_timmar=live["prognos_arkiv_timmar"],
+        max_alder_timmar=live["max_alder_timmar"],
+        idempotent=live["idempotent"],
+        prognos_parametrar=prognos_parametrar,
     )
 
 def berakna_tranings_och_valideringsperiod(
@@ -253,7 +297,7 @@ def berakna_tranings_och_valideringsperiod(
     # Valideringsperioden omfattar de tre föregående hela månaderna
     validering_slut = aktuell_manad - pd.Timedelta(days=1)
     validering_start = (
-        aktuell_manad - pd.DateOffset(months=3)
+        aktuell_manad - pd.DateOffset(months=6)
     ).normalize()
 
     # Träningen slutar dagen före valideringen börjar

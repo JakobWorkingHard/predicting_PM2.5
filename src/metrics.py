@@ -347,3 +347,38 @@ def jamfor_championer(
         "Head-to-head på testdata (%s gemensamma rader) är klar.",
         len(champion_rader),
     )
+
+
+
+
+# Används i live prediktioner
+def sammanstall_live_uppfoljning(uppf_df):
+    """
+    Rättade live-prediktioner per (linje, modell), med samma måttberäkning
+    som resten av projektet (evaluate_model): MAE, RMSE, R2, Bias.
+
+    Sist läggs persistence-baslinjen till (senaste mätningen som prognos),
+    beräknad per unik måltid så att samma timme inte väger dubbelt.
+
+    uppf_df behöver kolumnerna: linje, modell, prediktion, faktiskt,
+    pm25_senaste, mål_tid. Returnerar tabellen sorterad på MAE (lägst bäst).
+    """
+    rader = []
+    for (linje, modell), grupp in uppf_df.groupby(["linje", "modell"]):
+        resultat = evaluate_model(grupp["faktiskt"], grupp["prediktion"])
+        rader.append({"linje": linje, "modell": modell, "antal": len(grupp), **resultat})
+
+    pers = uppf_df.drop_duplicates(subset=["mål_tid"])
+    rader.append({
+        "linje": "persistence-baseline",
+        "modell": "senaste mätningen",
+        "antal": len(pers),
+        **evaluate_model(pers["faktiskt"], pers["pm25_senaste"]),
+    })
+
+    return (
+        pd.DataFrame(rader)
+        .sort_values("MAE")
+        .loc[:, ["linje", "modell", "antal", "MAE", "RMSE", "R2", "Bias"]]
+        .reset_index(drop=True)
+    )
