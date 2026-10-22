@@ -13,6 +13,33 @@ from src.io import generate_csv
 
 log = setup_logger()
 
+def hamta_med_retry(url, **kwargs):
+    for forsok in range(1, 4):
+        try:
+            svar = requests.get(
+                url,
+                timeout=(20, 120),
+                **kwargs,
+            )
+            svar.raise_for_status()
+            return svar
+
+        except (
+            requests.exceptions.Timeout,
+            requests.exceptions.ConnectionError,
+        ) as e:
+            if forsok == 3:
+                raise
+
+            vantetid = 5 * forsok
+            log.warning(
+                "Nätverksfel, försök %s/3: %s. Väntar %s sekunder.",
+                forsok,
+                e,
+                vantetid,
+            )
+            time.sleep(vantetid)
+
 
 def till_svensk_tid(ms):
     tid = pd.to_datetime(ms, unit="ms", utc=True)
@@ -73,8 +100,10 @@ def hamta_pm25(TRAIN_START, TRAIN_SLUT, tidsserie_id, LUFT_API, csv_path):
                         f"{till.tz_convert('UTC'):%Y-%m-%dT%H:%M:%SZ}")
 
             print(f"Hämtar {manad}...", flush=True)
-            svar = requests.get(f"{LUFT_API}/timeseries/{tidsserie_id}/getData",
-                                params={"timespan": timespan}, timeout=60)
+            svar = svar = hamta_med_retry(
+                f"{LUFT_API}/timeseries/{tidsserie_id}/getData",
+                params={"timespan": timespan},
+                )
             svar.raise_for_status()
             alla_varden.extend(svar.json()["values"])
             time.sleep(0.5)
@@ -146,8 +175,7 @@ def hamta_vader_arkiv( parameter,station_id,VADER_API,csv_path=None,period="corr
     )
 
     try:
-        svar = requests.get(url, timeout=120)
-        svar.raise_for_status()
+        svar = hamta_med_retry(url)
 
     except requests.exceptions.RequestException as e:
         print(
@@ -289,8 +317,7 @@ def hamta_testperiod(
         "/period/latest-months/data.csv"
     )
 
-    svar = requests.get(url, timeout=120)
-    svar.raise_for_status()
+    svar = hamta_med_retry(url)
 
     rader = svar.text.splitlines()
     startrad = next(
