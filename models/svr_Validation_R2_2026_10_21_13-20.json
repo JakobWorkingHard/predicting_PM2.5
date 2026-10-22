@@ -1,0 +1,24 @@
+{
+  "model_name": "SVR",
+  "model_file": "C:\\Users\\Victoria\\DS\\Grupparbete\\predicting_air_quality\\models\\svr_Validation_R2_2026_10_21_13-20.joblib",
+  "variant": "",
+  "random_state": 42,
+  "selection_metric": "Validation R²",
+  "metrics": {
+    "Modell": "SVR",
+    "Train MAE": 2.2754759801758047,
+    "Train RMSE": 3.754047893988053,
+    "Train R²": 0.6485874300455058,
+    "Train Bias": -0.4654575078789467,
+    "Train High PM2.5 MAE": 6.71074497763622,
+    "Train High PM2.5 Bias": -5.981094490829746,
+    "Train High PM2.5 Count": 2156,
+    "Validation MAE": 2.9100111515252656,
+    "Validation RMSE": 4.452714134463306,
+    "Validation R²": 0.7106431182018742,
+    "Validation Bias": -0.8157257473672263,
+    "Validation High PM2.5 MAE": 6.764326578106745,
+    "Validation High PM2.5 Bias": -5.783928531614142,
+    "Validation High PM2.5 Count": 616
+  }
+}

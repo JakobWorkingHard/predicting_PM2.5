@@ -282,3 +282,145 @@ target                    23
 2026-10-22 10:43:14,417 | INFO | src.model_pipeline | En befintlig vanlig champion är fortfarande aktuell. Tidpunkt: 2026-10-22T09:32:30.180730 | Modell: SVR vanlig (T+6) | Mått: Validation R² | Score: 0.3992065096524583
 2026-10-22 10:43:14,421 | INFO | src.model_pipeline | En befintlig förskjuten champion är fortfarande aktuell. Tidpunkt: 2026-10-22T09:33:38.073375 | Modell: SVR forskjuten (T+6) | Mått: Validation R² | Score: 0.4440726879071481
 2026-10-22 10:43:14,421 | INFO | __main__ | PM2.5-projektets pipeline har slutförts
+2026-10-22 12:23:57,392 | INFO | src.champion | Champion-tävling på testdata (3 rader), mått MAE: dagens 0.0000, tidigare 2.0000. Vinnare: new.
+2026-10-22 12:43:03,199 | INFO | __main__ | Startar PM2.5-projektets pipeline
+2026-10-22 12:43:12,524 | INFO | __main__ | Konfigurationen har laddats
+2026-10-22 12:43:12,524 | INFO | src.orchestrator | Startar projektets orchestration.
+2026-10-22 12:43:13,070 | INFO | src.data_pipeline | Dynamisk testperiod: 2026-07-01 00:00:00+02:00 till 2026-10-22 07:00:00+02:00
+2026-10-22 12:43:34,400 | INFO | src.data_pipeline | PM2.5-testdata har hämtats och sparats.
+2026-10-22 12:43:52,975 | INFO | src.data_pipeline | Vädertestdata har hämtats och sparats.
+2026-10-22 12:43:53,042 | INFO | src.data_pipeline | Testdata för PM2.5 och väder har sammanfogats.
+2026-10-22 12:54:16,525 | INFO | __main__ | Startar PM2.5-projektets pipeline
+2026-10-22 12:54:31,455 | INFO | __main__ | Konfigurationen har laddats
+2026-10-22 12:54:31,455 | INFO | src.orchestrator | Startar projektets orchestration.
+2026-10-22 12:54:32,040 | INFO | src.data_pipeline | Dynamisk testperiod: 2026-07-01 00:00:00+02:00 till 2026-10-22 07:00:00+02:00
+2026-10-22 12:54:32,102 | INFO | src.data_pipeline | PM2.5-testdata har hämtats och sparats.
+2026-10-22 12:54:50,200 | INFO | src.data_pipeline | Vädertestdata har hämtats och sparats.
+2026-10-22 12:54:50,202 | INFO | src.data_pipeline | Testdata för PM2.5 och väder har sammanfogats.
+2026-10-22 12:55:49,863 | WARNING | pm25 | Nätverksfel, försök 1/3: HTTPSConnectionPool(host='datavardluft.smhi.se', port=443): Max retries exceeded with url: /52North/api/timeseries/6247/getData?timespan=2023-11-30T23%3A00%3A00Z%2F2023-12-31T22%3A59%3A59Z (Caused by ConnectTimeoutError(<HTTPSConnection(host='datavardluft.smhi.se', port=443) at 0x1584fe4e210>, 'Connection to datavardluft.smhi.se timed out. (connect timeout=20)')). Väntar 5 sekunder.
+2026-10-22 12:56:38,167 | WARNING | pm25 | Nätverksfel, försök 1/3: HTTPSConnectionPool(host='datavardluft.smhi.se', port=443): Max retries exceeded with url: /52North/api/timeseries/6247/getData?timespan=2024-04-30T22%3A00%3A00Z%2F2024-05-31T21%3A59%3A59Z (Caused by ConnectTimeoutError(<HTTPSConnection(host='datavardluft.smhi.se', port=443) at 0x1584fe4e210>, 'Connection to datavardluft.smhi.se timed out. (connect timeout=20)')). Väntar 5 sekunder.
+2026-10-22 12:57:07,010 | WARNING | pm25 | Nätverksfel, försök 1/3: HTTPSConnectionPool(host='datavardluft.smhi.se', port=443): Max retries exceeded with url: /52North/api/timeseries/6247/getData?timespan=2024-06-30T22%3A00%3A00Z%2F2024-07-31T21%3A59%3A59Z (Caused by ConnectTimeoutError(<HTTPSConnection(host='datavardluft.smhi.se', port=443) at 0x1584fe4f9d0>, 'Connection to datavardluft.smhi.se timed out. (connect timeout=20)')). Väntar 5 sekunder.
+2026-10-22 12:58:48,461 | WARNING | pm25 | Nätverksfel, försök 1/3: HTTPSConnectionPool(host='datavardluft.smhi.se', port=443): Max retries exceeded with url: /52North/api/timeseries/6247/getData?timespan=2025-04-30T22%3A00%3A00Z%2F2025-05-31T21%3A59%3A59Z (Caused by ConnectTimeoutError(<HTTPSConnection(host='datavardluft.smhi.se', port=443) at 0x1584fe4f9d0>, 'Connection to datavardluft.smhi.se timed out. (connect timeout=20)')). Väntar 5 sekunder.
+2026-10-22 12:59:34,684 | INFO | src.data_pipeline | Träningsdata för PM2.5 har hämtats och sparats.
+2026-10-22 13:00:04,506 | INFO | src.data_pipeline | Träningsdata för väder har hämtats och sparats.
+2026-10-22 13:00:04,772 | INFO | src.data_pipeline | Träningsdata för PM2.5 och väder har sammanfogats.
+2026-10-22 13:00:30,277 | WARNING | pm25 | Nätverksfel, försök 1/3: HTTPSConnectionPool(host='datavardluft.smhi.se', port=443): Max retries exceeded with url: /52North/api/timeseries/6247/getData?timespan=2026-04-30T22%3A00%3A00Z%2F2026-05-31T21%3A59%3A59Z (Caused by ConnectTimeoutError(<HTTPSConnection(host='datavardluft.smhi.se', port=443) at 0x1584fe4f9d0>, 'Connection to datavardluft.smhi.se timed out. (connect timeout=20)')). Väntar 5 sekunder.
+2026-10-22 13:00:53,461 | INFO | src.data_pipeline | Valideringsdata för PM2.5 har hämtats och sparats.
+2026-10-22 13:01:44,767 | INFO | src.data_pipeline | Valideringsdata för väder har hämtats och sparats.
+2026-10-22 13:01:44,850 | INFO | src.data_pipeline | Valideringsdata för PM2.5 och väder har sammanfogats.
+2026-10-22 13:01:44,961 | INFO | src.data_pipeline | Bearbetar dataset: train_processed_2023-05-26_2025-12-31.csv
+2026-10-22 13:01:44,962 | INFO | src.validate_process | Startar datavalidering.
+2026-10-22 13:01:45,110 | INFO | src.validate_process | Datavalidering slutförd. Antal rader: 22825, antal kolumner: 7.
+2026-10-22 13:01:45,149 | INFO | src.io | --- Datakontroll: train_processed_2023-05-26_2025-12-31.csv ---
+2026-10-22 13:01:45,149 | INFO | src.io | Rader i mergad fil: 22825
+2026-10-22 13:01:45,150 | INFO | src.io | Rader efter validate_data: 22825
+2026-10-22 13:01:45,150 | INFO | src.io | Rader efter dropna: 21555
+2026-10-22 13:01:45,150 | INFO | src.io | Borttagna rader: 1270 (5.6%)
+2026-10-22 13:01:45,151 | INFO | src.io | Saknade värden per kolumn (en rad kan sakna flera):
+pm25                      154
+Lufttemperatur            536
+vind_sin                  572
+vind_cos                  572
+Vindhastighet             572
+Relativ luftfuktighet     570
+Nederbördsmängd          1069
+target                    158
+2026-10-22 13:01:45,154 | INFO | src.io | Loggade datakontroll i: C:\Users\Victoria\DS\Grupparbete\predicting_air_quality\logs\datakontroll.csv
+2026-10-22 13:01:45,816 | INFO | src.data_pipeline | Bearbetat dataset har sparats: train_processed_2023-05-26_2025-12-31.csv
+2026-10-22 13:01:45,817 | INFO | src.data_pipeline | Bearbetar dataset: val_processed_2026-01-01_2026-06-30.csv
+2026-10-22 13:01:45,817 | INFO | src.validate_process | Startar datavalidering.
+2026-10-22 13:01:45,853 | INFO | src.validate_process | Datavalidering slutförd. Antal rader: 4343, antal kolumner: 7.
+2026-10-22 13:01:45,876 | INFO | src.io | --- Datakontroll: val_processed_2026-01-01_2026-06-30.csv ---
+2026-10-22 13:01:45,876 | INFO | src.io | Rader i mergad fil: 4343
+2026-10-22 13:01:45,877 | INFO | src.io | Rader efter validate_data: 4343
+2026-10-22 13:01:45,877 | INFO | src.io | Rader efter dropna: 4282
+2026-10-22 13:01:45,877 | INFO | src.io | Borttagna rader: 61 (1.4%)
+2026-10-22 13:01:45,878 | INFO | src.io | Saknade värden per kolumn (en rad kan sakna flera):
+pm25                3
+vind_sin            2
+vind_cos            2
+Vindhastighet       2
+Nederbördsmängd    48
+target              8
+2026-10-22 13:01:45,882 | INFO | src.io | Loggade datakontroll i: C:\Users\Victoria\DS\Grupparbete\predicting_air_quality\logs\datakontroll.csv
+2026-10-22 13:01:46,028 | INFO | src.data_pipeline | Bearbetat dataset har sparats: val_processed_2026-01-01_2026-06-30.csv
+2026-10-22 13:01:46,028 | INFO | src.data_pipeline | Bearbetar dataset: test_processed_2026-07-01_2026-10-22.csv
+2026-10-22 13:01:46,028 | INFO | src.validate_process | Startar datavalidering.
+2026-10-22 13:01:46,055 | INFO | src.validate_process | Datavalidering slutförd. Antal rader: 2720, antal kolumner: 7.
+2026-10-22 13:01:46,072 | INFO | src.io | --- Datakontroll: test_processed_2026-07-01_2026-10-22.csv ---
+2026-10-22 13:01:46,072 | INFO | src.io | Rader i mergad fil: 2720
+2026-10-22 13:01:46,073 | INFO | src.io | Rader efter validate_data: 2720
+2026-10-22 13:01:46,073 | INFO | src.io | Rader efter dropna: 2595
+2026-10-22 13:01:46,073 | INFO | src.io | Borttagna rader: 125 (4.6%)
+2026-10-22 13:01:46,074 | INFO | src.io | Saknade värden per kolumn (en rad kan sakna flera):
+pm25               17
+Nederbördsmängd    96
+target             23
+2026-10-22 13:01:46,077 | INFO | src.io | Loggade datakontroll i: C:\Users\Victoria\DS\Grupparbete\predicting_air_quality\logs\datakontroll.csv
+2026-10-22 13:01:46,170 | INFO | src.data_pipeline | Bearbetat dataset har sparats: test_processed_2026-07-01_2026-10-22.csv
+2026-10-22 13:01:46,170 | INFO | src.data_pipeline | Bearbetar dataset: train_processed_forskjuten_2023-05-26_2025-12-31_h6.csv
+2026-10-22 13:01:46,170 | INFO | src.validate_process | Startar datavalidering.
+2026-10-22 13:01:46,322 | INFO | src.validate_process | Datavalidering slutförd. Antal rader: 22825, antal kolumner: 7.
+2026-10-22 13:01:46,364 | INFO | src.io | --- Datakontroll: train_processed_forskjuten_2023-05-26_2025-12-31_h6.csv ---
+2026-10-22 13:01:46,365 | INFO | src.io | Rader i mergad fil: 22825
+2026-10-22 13:01:46,365 | INFO | src.io | Rader efter validate_data: 22825
+2026-10-22 13:01:46,366 | INFO | src.io | Rader efter dropna: 21555
+2026-10-22 13:01:46,366 | INFO | src.io | Borttagna rader: 1270 (5.6%)
+2026-10-22 13:01:46,367 | INFO | src.io | Saknade värden per kolumn (en rad kan sakna flera):
+pm25                      154
+Lufttemperatur            542
+vind_sin                  578
+vind_cos                  578
+Vindhastighet             578
+Relativ luftfuktighet     576
+Nederbördsmängd          1075
+target                    158
+2026-10-22 13:01:46,369 | INFO | src.io | Loggade datakontroll i: C:\Users\Victoria\DS\Grupparbete\predicting_air_quality\logs\datakontroll.csv
+2026-10-22 13:01:46,371 | INFO | src.data_pipeline | Bearbetat dataset har sparats: train_processed_forskjuten_2023-05-26_2025-12-31_h6.csv
+2026-10-22 13:01:46,371 | INFO | src.data_pipeline | Bearbetar dataset: val_processed_forskjuten_2026-01-01_2026-06-30_h6.csv
+2026-10-22 13:01:46,371 | INFO | src.validate_process | Startar datavalidering.
+2026-10-22 13:01:46,408 | INFO | src.validate_process | Datavalidering slutförd. Antal rader: 4343, antal kolumner: 7.
+2026-10-22 13:01:46,428 | INFO | src.io | --- Datakontroll: val_processed_forskjuten_2026-01-01_2026-06-30_h6.csv ---
+2026-10-22 13:01:46,428 | INFO | src.io | Rader i mergad fil: 4343
+2026-10-22 13:01:46,428 | INFO | src.io | Rader efter validate_data: 4343
+2026-10-22 13:01:46,429 | INFO | src.io | Rader efter dropna: 4282
+2026-10-22 13:01:46,429 | INFO | src.io | Borttagna rader: 61 (1.4%)
+2026-10-22 13:01:46,431 | INFO | src.io | Saknade värden per kolumn (en rad kan sakna flera):
+pm25                      3
+Lufttemperatur            6
+vind_sin                  8
+vind_cos                  8
+Vindhastighet             8
+Relativ luftfuktighet     6
+Nederbördsmängd          54
+target                    8
+2026-10-22 13:01:46,435 | INFO | src.io | Loggade datakontroll i: C:\Users\Victoria\DS\Grupparbete\predicting_air_quality\logs\datakontroll.csv
+2026-10-22 13:01:46,590 | INFO | src.data_pipeline | Bearbetat dataset har sparats: val_processed_forskjuten_2026-01-01_2026-06-30_h6.csv
+2026-10-22 13:01:46,591 | INFO | src.data_pipeline | Bearbetar dataset: test_processed_forskjuten_2026-07-01_2026-10-22_h6.csv
+2026-10-22 13:01:46,591 | INFO | src.validate_process | Startar datavalidering.
+2026-10-22 13:01:46,619 | INFO | src.validate_process | Datavalidering slutförd. Antal rader: 2720, antal kolumner: 7.
+2026-10-22 13:01:46,636 | INFO | src.io | --- Datakontroll: test_processed_forskjuten_2026-07-01_2026-10-22_h6.csv ---
+2026-10-22 13:01:46,636 | INFO | src.io | Rader i mergad fil: 2720
+2026-10-22 13:01:46,637 | INFO | src.io | Rader efter validate_data: 2720
+2026-10-22 13:01:46,637 | INFO | src.io | Rader efter dropna: 2595
+2026-10-22 13:01:46,637 | INFO | src.io | Borttagna rader: 125 (4.6%)
+2026-10-22 13:01:46,638 | INFO | src.io | Saknade värden per kolumn (en rad kan sakna flera):
+pm25                      17
+Lufttemperatur             6
+vind_sin                   6
+vind_cos                   6
+Vindhastighet              6
+Relativ luftfuktighet      6
+Nederbördsmängd          102
+target                    23
+2026-10-22 13:01:46,640 | INFO | src.io | Loggade datakontroll i: C:\Users\Victoria\DS\Grupparbete\predicting_air_quality\logs\datakontroll.csv
+2026-10-22 13:01:46,723 | INFO | src.data_pipeline | Bearbetat dataset har sparats: test_processed_forskjuten_2026-07-01_2026-10-22_h6.csv
+2026-10-22 13:01:46,747 | INFO | src.model_pipeline | En befintlig vanlig champion är fortfarande aktuell. Tidpunkt: 2026-10-22T09:32:30.180730 | Modell: SVR vanlig (T+6) | Mått: Validation R² | Score: 0.3992065096524583
+2026-10-22 13:01:46,770 | INFO | src.model_pipeline | En befintlig förskjuten champion är fortfarande aktuell. Tidpunkt: 2026-10-22T09:33:38.073375 | Modell: SVR forskjuten (T+6) | Mått: Validation R² | Score: 0.4440726879071481
+2026-10-22 13:01:46,770 | INFO | __main__ | PM2.5-projektets pipeline har slutförts
+2026-10-22 13:10:58,224 | WARNING | src.champion | Modellfilen finns inte: C:\Users\Victoria\DS\Grupparbete\predicting_air_quality\models\svr_Validation_R2_2026_10_20_14-55.joblib
+2026-10-22 13:27:38,851 | INFO | src.champion | Läser in champion SVR vanlig (T+6) från C:\Users\Victoria\DS\Grupparbete\predicting_air_quality\models\svr_vanlig_(t+6)_Validation_R2_2026_10_22_09-32.joblib
+2026-10-22 13:30:14,874 | INFO | src.champion | Läser in champion SVR vanlig (T+6) från C:\Users\Victoria\DS\Grupparbete\predicting_air_quality\models\svr_vanlig_(t+6)_Validation_R2_2026_10_22_09-32.joblib
+2026-10-22 13:32:35,973 | INFO | src.champion | Läser in champion SVR vanlig (T+6) från C:\Users\Victoria\DS\Grupparbete\predicting_air_quality\models\svr_vanlig_(t+6)_Validation_R2_2026_10_22_09-32.joblib
+2026-10-22 13:32:47,663 | INFO | src.champion | Champion-tävling på testdata (2595 rader), mått MAE: dagens 1.5240, tidigare 1.5211. Vinnare: old.
+2026-10-22 13:32:58,256 | INFO | src.champion | Champion-tävling på testdata (2595 rader), mått R2: dagens 0.5929, tidigare 0.5941. Vinnare: old.
