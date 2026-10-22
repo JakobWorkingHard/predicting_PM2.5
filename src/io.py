@@ -140,14 +140,20 @@ def append_champion_log(log_path, model_name, metric, score, sokvag=None):
     print(f"Loggade champion i: {log_path} ({model_name}, {timestamp})")
 
 
-def champion_is_fresh(log_path, antal_dagar) -> bool:
+def champion_is_fresh(log_path, antal_dagar, namn_suffix="") -> bool:
     """
-    Avgör om senaste champion-loggningen är gjord inom de senaste
-    'antal_dagar' dagarna.
+    Avgör om senaste champion-loggningen för DENNA horisonten är gjord
+    inom de senaste 'antal_dagar' dagarna.
 
-    Returnerar True om champion är färsk (orskestratorns steg 5 kan skippas),
-    False annars. Fail-safe: om filen saknas, är tom eller innehåller en
-    ogiltig timestamp returneras False, så att en full träning tvingas fram.
+    Med namn_suffix (t.ex. " (T+6)") räknas bara rader där modellnamnet
+    slutar på suffixet — både riktiga modeller och baseline-vinster
+    loggas med suffix. Rader från en annan horisont kan då aldrig hålla
+    träningen tillbaka vid ett horisontbyte.
+
+    Returnerar True om champion är färsk (orkestratorns steg 5 kan skippas),
+    False annars. Fail-safe: om filen saknas, saknar matchande rader eller
+    innehåller en ogiltig timestamp returneras False, så att en full
+    träning tvingas fram.
 
     Parametrar
     ----------
@@ -155,6 +161,9 @@ def champion_is_fresh(log_path, antal_dagar) -> bool:
         Sökväg till loggfilen, t.ex. "logs/champion_vanlig.csv".
     antal_dagar : int
         Maximal ålder i dagar för att champion ska räknas som färsk.
+    namn_suffix : str
+        Horisont-suffixet i modellnamnet, t.ex. " (T+6)". Tom sträng =
+        filtrera inte (bakåtkompatibelt beteende).
     """
     log_path = Path(log_path)
     if not log_path.is_file():
@@ -162,6 +171,13 @@ def champion_is_fresh(log_path, antal_dagar) -> bool:
 
     try:
         log_df = pd.read_csv(log_path)
+
+        # Filtrera först på linjens horisont, kolla sedan åldern
+        if namn_suffix:
+            if "modell" not in log_df.columns:
+                return False
+            log_df = log_df[log_df["modell"].fillna("").str.endswith(namn_suffix)]
+
         if log_df.empty or "timestamp" not in log_df.columns:
             return False
 
@@ -205,7 +221,12 @@ def hamta_champion_modell(models_dir, champion_log):
     if log_df.empty or "modell" not in log_df.columns:
         return None, None
 
-    modellrader = log_df[log_df["modell"] != "Persistence Baseline"]
+    # Baseline-rader loggas med horisont-suffix, t.ex.
+    # "Persistence Baseline (T+6)" — därför prefix-match i stället för
+    # exakt matchning.
+    modellrader = log_df[
+        ~log_df["modell"].str.startswith("Persistence Baseline", na=False)
+    ]
     if modellrader.empty:
         print("Ingen sparad champion-modell i loggen (endast baseline-vinster).")
         return None, None
@@ -306,3 +327,15 @@ def append_datakontroll_log(log_path, dataset, antal_merged, antal_validerad, an
     header = not log_path.is_file()
     pd.DataFrame([rad]).to_csv(log_path, mode="a", header=header, index=False)
     log.info("Loggade datakontroll i: %s", log_path)
+
+
+# Används av predict pipeline
+def append_prediktioner_log(log_path, poster_df):
+    """Appendar live-prediktioner (en rad per linje) till loggen.
+
+    Skapar filen med rubrikrad om den saknas — samma mönster som
+    append_champion_log.
+    """
+    log_path = Path(log_path)
+    log_path.parent.mkdir(parents=True, exist_ok=True)
+    poster_df.to_csv(log_path, mode="a", header=not log_path.is_file(), index=False)
