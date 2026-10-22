@@ -1,0 +1,3 @@
+modell,timestamp,metric,score,sokvag
+SVR (T+6),2026-10-20T14:57:04.628006,Validation R²,0.7137685011631798,forskjuten_svr_(t+6)_Validation_R2_2026_10_20_14-57.joblib
+SVR (T+6),2026-10-20T15:04:04.415993,Validation R²,0.7137685011631798,forskjuten_svr_(t+6)_Validation_R2_2026_10_20_14-57.joblib
