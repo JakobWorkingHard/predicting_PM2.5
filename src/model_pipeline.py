@@ -24,9 +24,8 @@ log = setup_logger(__name__)
 
 
 def _validation_row(model, name, X_val, y_val): 
-    """ Räknar ut en modells resultat på valideringsdatan, i samma format som 
-    raderna i results_df. Används när den tidigare championen vinner, så att 
-    poängen i loggen går att jämföra med de andra raderna. """ 
+    """Beräknar tidigare champions resultat på valideringsdata
+    för att kunna visa det tillsammans med övriga valideringsresultat."""
     
     resultat = evaluate_model(y_val, model.predict(X_val)) 
     
@@ -92,17 +91,17 @@ def run_model_line( cfg, line_label, train_path, val_path, test_path, log_path, 
     # redan tabellen så att den bästa modellen hamnar överst. 
     
     baseline_train, baseline_val = persistence_baseline( X_train, y_train, X_val,y_val, ) 
-    comparison_df = build_comparison_table( results_df, baseline_val, cfg.selection_metric, )
+    comparison_df = build_comparison_table( results_df, baseline_val, cfg.candidate_selection_metric, )
     
     display_df(comparison_df) 
     
-    best_name, best_row = select_best_model( comparison_df, metric=cfg.selection_metric, )
+    best_name, best_row = select_best_model( comparison_df, metric=cfg.candidate_selection_metric, )
     
     log.info( "Bästa alternativ (%s): %s. Urvalsmått: %s. Score: %.4f.", 
              line_label, 
              best_name, 
-             cfg.selection_metric,
-             best_row[cfg.selection_metric], 
+             cfg.candidate_selection_metric,
+             best_row[cfg.candidate_selection_metric],
              )
     
     champion_namn = f"{best_name}{name_suffix}"
@@ -115,6 +114,7 @@ def run_model_line( cfg, line_label, train_path, val_path, test_path, log_path, 
         
         champion_row = best_row 
         modell_sokvag = None 
+        champion_test_score = None
         
     else: 
         # Hämta modellens resultat för metadata 
@@ -124,7 +124,7 @@ def run_model_line( cfg, line_label, train_path, val_path, test_path, log_path, 
 
         old_model, old_name, old_file = load_latest_champion(log_path, cfg.models_dir, ) 
         
-        winner, _ = compete_with_champion( 
+        winner, test_results_df = compete_with_champion(
             new_model=trained_models[best_name],
             new_name=champion_namn, 
             old_model=old_model, 
@@ -132,7 +132,10 @@ def run_model_line( cfg, line_label, train_path, val_path, test_path, log_path, 
             test_path=test_path, 
             features=cfg.features,
             target=cfg.target_column, 
-            metric=cfg.selection_metric, ) 
+            metric=cfg.champion_selection_metric, )
+
+        winner_index = 0 if winner == "new" else 1
+        champion_test_score = test_results_df.iloc[winner_index]["R2"]
         
         if winner == "new":
              # Dagens modell vann och sparas som ny champion. 
@@ -146,7 +149,7 @@ def run_model_line( cfg, line_label, train_path, val_path, test_path, log_path, 
                                                  best_row=full_row, 
                                                  models_dir=cfg.models_dir, 
                                                  random_state=cfg.random_state,
-                                                 metric=cfg.selection_metric, 
+                                                 metric=cfg.champion_selection_metric,
                                                  filprefix=filprefix, ) 
              
              log.info("Champion %s har sparats.", champion_namn) 
@@ -171,20 +174,30 @@ def run_model_line( cfg, line_label, train_path, val_path, test_path, log_path, 
     display_df(champion_row.to_frame().T)
 
 
-    # 4. Logga vinnaren, inklusive sökvägen till modellfilen 
-    # (tom om baslinjen vann)
-    append_champion_log(log_path=log_path, 
-                        model_name=champion_namn, 
-                        metric=cfg.selection_metric,
-                        score=champion_row[cfg.selection_metric], 
-                        sokvag=modell_sokvag, ) 
-    
-    log.info("Champion-loggen (%s) har uppdaterats. Modell: %s, mått: %s, score: %.4f.", 
-             line_label, 
-             champion_namn, 
-             cfg.selection_metric,
-             champion_row[cfg.selection_metric],
-            ) 
+    # 4. Logga vinnaren
+    if champion_test_score is not None:
+        logged_metric = "Test R²"
+        logged_score = champion_test_score
+    else:
+        logged_metric = cfg.champion_selection_metric
+        logged_score = champion_row[cfg.champion_selection_metric]
+
+    append_champion_log(
+        log_path=log_path,
+        model_name=champion_namn,
+        metric=logged_metric,
+        score=logged_score,
+        sokvag=modell_sokvag,
+    )
+
+    log.info(
+        "Champion-loggen (%s) har uppdaterats. Modell: %s, mått: %s, score: %.4f.",
+        line_label,
+        champion_namn,
+        logged_metric,
+        logged_score,
+    )
+
     
     if champion_modell is None: 
         return None 

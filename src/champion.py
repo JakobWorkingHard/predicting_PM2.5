@@ -86,18 +86,32 @@ def compete_with_champion(
 
     Returnerar (winner, results_df), där winner är "new" eller "old".
     """
-    if old_model is None:
-        log.info("Ingen tidigare champion finns. %s vinner automatiskt.", new_name)
-        return "new", None
-
+     # Läs in testdata
     test_df = pd.read_csv(test_path)
     X_test = test_df[features]
     y_test = test_df[target]
 
-    # Båda modellerna utvärderas på exakt samma rader
+    # Utvärdera den nya kandidaten
     new_results = evaluate_model(y_test, new_model.predict(X_test))
+
+    # Om ingen tidigare champion finns
+    if old_model is None:
+        log.info(
+            "Ingen tidigare champion finns. %s vinner automatiskt.",
+            new_name
+        )
+
+        results_df = pd.DataFrame([
+            {"Modell": f"{new_name} (dagens bästa)", **new_results}
+        ])
+
+        display_df(results_df)
+        return "new", results_df
+
+    # Utvärdera tidigare champion på samma testdata
     old_results = evaluate_model(y_test, old_model.predict(X_test))
 
+    # Välj vilket mått som ska avgöra jämförelsen
     key, direction = _metric_key_and_direction(metric)
     new_score = new_results[key]
     old_score = old_results[key]
@@ -107,18 +121,21 @@ def compete_with_champion(
     elif direction == "lower":
         new_wins = new_score < old_score
     else:
-        # Bias: den som ligger närmast noll vinner
         new_wins = abs(new_score) < abs(old_score)
 
+    # Sammanställ testresultaten
     results_df = pd.DataFrame([
         {"Modell": f"{new_name} (dagens bästa)", **new_results},
         {"Modell": f"{old_name} (tidigare champion)", **old_results},
     ])
+
     display_df(results_df)
 
     winner = "new" if new_wins else "old"
+
     log.info(
         "Champion-tävling på testdata (%s rader), mått %s: dagens %.4f, tidigare %.4f. Vinnare: %s.",
         len(test_df), key, new_score, old_score, winner,
     )
+
     return winner, results_df
