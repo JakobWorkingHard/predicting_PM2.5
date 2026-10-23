@@ -148,6 +148,7 @@ def load_config(PATH_CONFIG_TOML: Path, PATH_PROJECT_ROOT: Path ) -> ProjectConf
 
     # Fast startdatum för PM2.5-serien
     train_start = t["train_start"]
+    validering_manader = t["validering_manader"]
 
     # Stations- och tidsserie-ID
     pm25_tidsserie_id = pm25["tidsserie_id"]
@@ -164,6 +165,7 @@ def load_config(PATH_CONFIG_TOML: Path, PATH_PROJECT_ROOT: Path ) -> ProjectConf
     perioder = berakna_tranings_och_valideringsperiod(
         senaste_arkivtid=senaste_arkivtid,
         train_start=train_start,
+        validering_manader=validering_manader,
     )
 
     train_slut = perioder["train_slut"]
@@ -277,11 +279,12 @@ def load_config(PATH_CONFIG_TOML: Path, PATH_PROJECT_ROOT: Path ) -> ProjectConf
 def berakna_tranings_och_valideringsperiod(
     senaste_arkivtid: pd.Timestamp,
     train_start: str,
+    validering_manader: int,
 ) -> dict[str, str]:
     """
     Beräknar dynamiska tränings- och valideringsperioder.
 
-    Valideringen består av de tre senaste fullständiga
+    Valideringen består av de `validering_manader` senaste fullständiga
     kalendermånaderna före den månad som latest_arcives tid tillhör.
 
     Träningen slutar dagen före valideringsperiodens start.
@@ -296,10 +299,10 @@ def berakna_tranings_och_valideringsperiod(
         microsecond=0,
     )
 
-    # Valideringsperioden omfattar de tre föregående hela månaderna
+    # Valideringsperioden omfattar de föregående hela månaderna
     validering_slut = aktuell_manad - pd.Timedelta(days=1)
     validering_start = (
-        aktuell_manad - pd.DateOffset(months=6)
+        aktuell_manad - pd.DateOffset(months=validering_manader)
     ).normalize()
 
     # Träningen slutar dagen före valideringen börjar
