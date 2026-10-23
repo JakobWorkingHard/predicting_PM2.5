@@ -171,6 +171,22 @@ def build_comparison_table(results_df, baseline_val_metrics, sort_by):
 # 5. Modellval
 #----------------------------------------------------------
 
+def metric_direction(metric):
+    """
+    Anger vad som räknas som bäst för ett mått:
+      "higher"          R²: högre är bättre
+      "lower"           MAE, MSE och RMSE: lägre är bättre
+      "closest_to_zero" Bias: närmare noll är bättre
+    Används av både select_best_model och compete_with_champion,
+    så att reglerna bara finns på ett ställe.
+    """
+    if "Bias" in metric:
+        return "closest_to_zero"
+    if "R²" in metric or "R2" in metric:
+        return "higher"
+    return "lower"
+
+
 def select_best_model(results_df, metric="Validation MAE"):
     """
     Väljer den modell som presterar bäst enligt valt mått.
@@ -202,12 +218,11 @@ def select_best_model(results_df, metric="Validation MAE"):
         )
 
     # 2. Välj rätt urvalsregel
-    if "Bias" in metric:
+    direction = metric_direction(metric)
+    if direction == "closest_to_zero":
         best_idx = results_df[metric].abs().idxmin()
-
-    elif "R²" in metric or "R2" in metric:
+    elif direction == "higher":
         best_idx = results_df[metric].idxmax()
-
     else:
         best_idx = results_df[metric].idxmin()
 
@@ -382,3 +397,4 @@ def sammanstall_live_uppfoljning(uppf_df):
         .loc[:, ["linje", "modell", "antal", "MAE", "RMSE", "R2", "Bias"]]
         .reset_index(drop=True)
     )
+
