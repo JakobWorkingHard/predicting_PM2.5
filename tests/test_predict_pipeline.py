@@ -2,7 +2,7 @@
 
 import pandas as pd
 
-from src.predict_pipeline import bestam_ankarpunkt
+from src.predict_pipeline import bestam_ankarpunkt, visa_senaste_prediktioner
 
 
 def _tim(n, start="2026-10-21 10:00"):
@@ -67,3 +67,39 @@ def test_bestam_ankarpunkt_tolererar_duplikata_tidsstampelar():
     T_obs = bestam_ankarpunkt(pm25, vader)
 
     assert T_obs == pd.Timestamp("2026-10-21 11:00", tz="Europe/Stockholm")
+
+
+def _uppf_df(n, start="2026-10-21 10:00"):
+    """Rättad uppföljnings-DataFrame, samma kolumner som folj_uppa bygger."""
+    tid = pd.date_range(start, periods=n, freq="h", tz="Europe/Stockholm")
+    return pd.DataFrame(
+        {
+            "körningstid": tid,
+            "linje": ["vanlig" if i % 2 == 0 else "forskjuten" for i in range(n)],
+            "mål_tid": tid,
+            "prediktion": [10.0 + i for i in range(n)],
+            "faktiskt": [9.5 + i for i in range(n)],
+        }
+    )
+
+
+def test_visa_senaste_prediktioner_visar_senaste_i_kronologisk_ordning(capsys):
+    """Tabellen visar de n senaste raderna, äldst överst."""
+    visa_senaste_prediktioner(_uppf_df(15), n=10)
+
+    ut = capsys.readouterr().out
+    # De 10 senaste raderna har prediktion 15–24; rad 1–5 ska vara borta
+    # ("10.0" är första radens prediktion och förekommer inte i visningen).
+    assert "15.0" in ut and "24.0" in ut
+    assert "10.0" not in ut
+    # Kronologisk ordning: 15:00 (äldsta visas raden) före 00:00 (senaste).
+    assert ut.index("2026-10-21 15:00") < ut.index("2026-10-22 00:00")
+
+
+def test_visa_senaste_prediktioner_faerre_rader_visar_alla(capsys):
+    """Färre än n realiserade rader -> alla visas."""
+    visa_senaste_prediktioner(_uppf_df(4), n=10)
+
+    ut = capsys.readouterr().out
+    assert "13.0" in ut and "12.5" in ut
+    assert "10.0" in ut  # första raden finns kvar när alla rader visas
