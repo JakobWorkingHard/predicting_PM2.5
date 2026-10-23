@@ -9,9 +9,9 @@ from src.extracting_data import (
 from src.features import add_wind_features, add_time_features
 from src.io import append_prediktioner_log, hamta_champion_modell
 from src.logger import setup_logger
-from src.metrics import display_df
-from src.validate_process import sanity_kolla_vader
 from src.metrics import display_df, sammanstall_live_uppfoljning
+from src.validate_process import sanity_kolla_vader
+
 
 log = setup_logger()
 
@@ -246,10 +246,42 @@ def kor_live_prediktion(cfg):
 
 
 
-def folj_uppa(cfg, timmar_bak: int = 24 * 7):
+def visa_senaste_prediktioner(uppf: pd.DataFrame, n: int = 10):
+    """
+    Visar de n senaste REALISERADE prediktionerna rad för rad: prediktion
+    mot faktiskt mätvärde plus fel, i kronologisk ordning (äldst överst).
+
+    Sortering sker på mål_tid med körningstid som tiebreaker, så raderna
+    motsvarar exakt det som skedde senast i loggen. Finns färre än n
+    rader visas alla.
+    """
+    senaste = uppf.sort_values(["mål_tid", "körningstid"]).tail(n).copy()
+
+    senaste["mål_tid"] = (
+        senaste["mål_tid"]
+        .dt.tz_convert("Europe/Stockholm")
+        .dt.strftime("%Y-%m-%d %H:%M")
+    )
+    senaste["fel"] = (senaste["prediktion"] - senaste["faktiskt"]).round(2)
+    for kolumn in ["prediktion", "faktiskt", "fel"]:
+        senaste[kolumn] = senaste[kolumn].map(lambda varde: f"{varde:.2f}")
+
+    print(f"\nDe {len(senaste)} senaste realiserade prediktionerna (prediktion vs faktiskt):")
+    display_df(
+        senaste[["mål_tid", "linje", "prediktion", "faktiskt", "fel"]],
+        disable_numparse=True,
+        colalign=("left", "left", "right", "right", "right"),
+    )
+
+
+def folj_uppa(cfg, timmar_bak: int = 24 * 7, senaste: int = 10):
     """
     Rättar loggade live-prediktioner mot verkliga PM2.5-mätningar och
     sammanställer MAE/RMSE/R²/Bias per linje + persistence-baseline.
+
+    Visar först de `senaste` senaste realiserade prediktionerna rad för
+    rad (visa_senaste_prediktioner), därefter den aggregerade
+    sammanställningen.
 
     Returnerar sammanställningen (DataFrame), eller None om loggen saknas
     eller ingen prediktion hunnit realiseras ännu.
@@ -272,6 +304,8 @@ def folj_uppa(cfg, timmar_bak: int = 24 * 7):
     if uppf.empty:
         log.info("Ingen prediktion har hunnit realiseras ännu.")
         return None
+
+    visa_senaste_prediktioner(uppf, n=senaste)
 
     sammanstallning = sammanstall_live_uppfoljning(uppf)
     log.info("Uppföljning: %d rättade prediktioner.", len(uppf))

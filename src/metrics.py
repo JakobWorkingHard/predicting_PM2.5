@@ -224,8 +224,24 @@ def select_best_model(results_df, metric="Validation MAE"):
 
 
 
-def display_df(df):
-    print(tabulate(df, headers="keys", tablefmt="fancy_grid", showindex=False))
+def display_df(df, **tabulate_kwargs):
+    """
+    Skriver ut en DataFrame som fancy_grid-tabell.
+
+    Extra nyckelordsargument (t.ex. disable_numparse, colalign) skickas
+    vidare till tabulate — disable_numparse=True behövs när kolumner
+    redan är formaterade som strängar, eftersom tabulate annars tolkar
+    numeriska strängar som tal och tar bort avslutande nollor.
+    """
+    print(
+        tabulate(
+            df,
+            headers="keys",
+            tablefmt="fancy_grid",
+            showindex=False,
+            **tabulate_kwargs,
+        )
+    )
 
 
 
