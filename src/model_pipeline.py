@@ -39,15 +39,20 @@ def _validation_row(model, name, X_val, y_val):
 
 def run_model_line( cfg, line_label, train_path, val_path, test_path, log_path, antal_dagar, name_suffix="", filprefix="", ):
  
-    """ Kör hela modellflödet för en modellinje (vanlig eller förskjuten): 
+    """ Kör hela modellflödet för en modellinje (vanlig eller förskjuten):
     1. Hoppar över allt om championen (med linjens horisont-suffix i
-    namnet) är yngre än antal_dagar. 
-    2. Tränar alla modeller och jämför dem med baslinjen på valideringsdatan. 
-    3. Låter dagens bästa modell tävla mot den tidigare championen på testdatan. 
-    Den tidigare championen behålls om den är minst lika bra. 
-    4. Loggar vinnaren i log_path, med sökvägen till modellfilen. 
-    Returnerar (champion_modell, champion_namn) om linjen tränades och enmodell blev champion. 
-    Returnerar None om linjen hoppades över eller om baslinjen vann. """ 
+    namnet) är yngre än antal_dagar. Den färska championen laddas ändå
+    in och returneras, så att orkestratorns jämförelse kan köras även
+    utan omträning.
+    2. Tränar alla modeller och jämför dem med baslinjen på valideringsdatan.
+    3. Låter dagens bästa modell tävla mot den tidigare championen på testdatan.
+    Den tidigare championen behålls om den är minst lika bra.
+    4. Loggar vinnaren i log_path, med sökvägen till modellfilen.
+    Returnerar (champion_modell, champion_namn) om linjen tränades och en
+    modell blev champion, samt när linjen hoppades över därför att en
+    befintlig champion med sparad modellfil var färsk.
+    Returnerar None om baslinjen vann den här körningen, eller om den
+    färska championen saknar sparad modellfil (t.ex. baseline-vinst). """
  
     # 1. Är championen fortfarande färsk? 
     # Suffixet kopplar färskheten till rätt horisont — en " (T+1)"-rad
@@ -61,7 +66,25 @@ def run_model_line( cfg, line_label, train_path, val_path, test_path, log_path, 
                  champion_log["modell"].iloc[-1], 
                  champion_log["metric"].iloc[-1],
                  champion_log["score"].iloc[-1], ) 
-        return None 
+        
+        # Ladda den färska championen även om inget tränades om, så att
+        # orkestratorns head-to-head-jämförelse kan visas vid varje körning.
+        champion_modell, champion_namn, _ = load_latest_champion( 
+            log_path, cfg.models_dir, ) 
+        
+        if champion_modell is None: 
+            log.info( 
+                "Den färska %s-championen har ingen sparad modellfil "
+                "(t.ex. baseline-vinst). Inget att jämföra.", 
+                line_label, 
+            ) 
+            return None 
+        
+        log.info( 
+            "Läser in den färska %s-championen %s för jämförelsen.", 
+            line_label, champion_namn, 
+        ) 
+        return champion_modell, champion_namn 
  
     log.info( "Ingen tillräckligt aktuell %s champion finns. " 
              "Startar modellträning. Gräns: %s dagar.", 
