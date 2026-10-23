@@ -260,7 +260,7 @@ def hamta_senaste_arkivtid(
 
         if not data.empty:
             senaste_tider.append(data.index.max())
-            print(f"{namn}: senaste mätning {data.index.max()}")
+            print(f"{namn}: sista mätningen från corrected archive {data.index.max()}")
 
     if not senaste_tider:
         raise ValueError(
