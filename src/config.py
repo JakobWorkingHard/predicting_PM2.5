@@ -281,7 +281,7 @@ def berakna_tranings_och_valideringsperiod(
     """
     Beräknar dynamiska tränings- och valideringsperioder.
 
-    Valideringen består av de tre senaste fullständiga
+    Valideringen består av de sex senaste fullständiga
     kalendermånaderna före den månad som latest_arcives tid tillhör.
 
     Träningen slutar dagen före valideringsperiodens start.
@@ -296,7 +296,7 @@ def berakna_tranings_och_valideringsperiod(
         microsecond=0,
     )
 
-    # Valideringsperioden omfattar de tre föregående hela månaderna
+    # Valideringsperioden omfattar de sex föregående hela månaderna
     validering_slut = aktuell_manad - pd.Timedelta(days=1)
     validering_start = (
         aktuell_manad - pd.DateOffset(months=6)
