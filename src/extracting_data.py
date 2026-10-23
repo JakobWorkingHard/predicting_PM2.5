@@ -245,26 +245,33 @@ def hamta_senaste_arkivtid(
     station_id: int,
     VADER_API: str,
 ) -> pd.Timestamp:
-    """Hämtar den senaste tillgängliga tidpunkten i corrected-archive."""
+    """Hämtar senaste tillgängliga arkivtid från SMHI:s metadata."""
 
     senaste_tider = []
 
     for namn, nummer in parametrar.items():
-        data = hamta_vader_arkiv(
-            parameter=nummer,
-            station_id=station_id,
-            VADER_API=VADER_API,
-            csv_path=None,
-            period="corrected-archive",
+        url = (
+            f"{VADER_API}/parameter/{nummer}"
+            f"/station/{station_id}"
+            "/period/corrected-archive.json"
         )
 
-        if not data.empty:
-            senaste_tider.append(data.index.max())
-            print(f"{namn}: senaste mätning {data.index.max()}")
+        svar = hamta_med_retry(url)
+        metadata = svar.json()
+
+        senaste_tid = pd.to_datetime(
+            metadata["to"],
+            unit="ms",
+            utc=True,
+        ).tz_convert("Europe/Stockholm")
+
+        senaste_tider.append(senaste_tid)
+
+        print(f"{namn}: senaste mätning {senaste_tid}")
 
     if not senaste_tider:
         raise ValueError(
-            "Hittade inga mätningar i corrected-archive."
+            "Hittade ingen arkivmetadata i corrected-archive."
         )
 
     return min(senaste_tider)
