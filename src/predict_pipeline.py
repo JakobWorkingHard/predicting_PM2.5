@@ -74,6 +74,19 @@ def bygg_live_rader(cfg, T_obs, pm25_varde, vaderobs_rad, vader_prognos_df):
         "forskjuten": sanity_kolla_vader(vader_prognos_df.loc[maltid]),
     }
 
+    # Logga väderprognosen som den förskjutna linjen faktiskt matas med
+    # (efter sanity_kolla_vader, dvs exakt de värden modellen ser).
+    prognos_slot = slots["forskjuten"]
+    log.info(
+        "Väderprognos för måltiden %s (använd av linjen forskjuten): %s",
+        maltid,
+        ", ".join(
+            f"{kolumn}={prognos_slot[kolumn]:g}" if pd.notna(prognos_slot[kolumn])
+            else f"{kolumn}=saknas"
+            for kolumn in cfg.forskjuten_vaderkolumner
+        ),
+    )
+
     rader = {}
     for namn, slot in slots.items():
         rad = {"tid": T_obs, "pm25": float(pm25_varde)}
@@ -89,6 +102,29 @@ def bygg_live_rader(cfg, T_obs, pm25_varde, vaderobs_rad, vader_prognos_df):
     return rader
 
 
+def visa_prognosrad(cfg, prognos_df, maltid):
+    """
+    Visar väderprognosraden vid måltiden — samma slot som bygg_live_rader
+    plockar, sanity-kollad så att tabellen visar exakt de värden modellen
+    matas med. Används både i normalflödet (steg 7) och i idempotensvakten
+    (tidigare prediktioner för samma T_obs). Bara den förskjutna linjen
+    använder prognos; den vanliga linjen predicteras på väderobservationen
+    vid T_obs.
+    """
+    if maltid not in prognos_df.index:
+        log.warning("Prognosen täcker inte %s — ingen väderprognos visas.", maltid)
+        return
+
+    prognos_rad = sanity_kolla_vader(prognos_df.loc[maltid])[
+        list(cfg.forskjuten_vaderkolumner)
+    ]
+    prognos_visning = prognos_rad.to_frame().T
+    prognos_visning.insert(0, "tid (måltid)", f"{maltid:%Y-%m-%d %H:%M %Z}")
+    print(
+        f"\nVäderprognos för den förskjutna prediktionen "
+        f"(SMHI punktprognos, prognostid {maltid:%Y-%m-%d %H:%M %Z}):"
+    )
+    display_df(prognos_visning)
 
 
 
@@ -145,6 +181,11 @@ def kor_live_prediktion(cfg):
             display_df(
                 gamla[["linje", "modell", "prediktion", "mål_tid", "pm25_senaste"]]
             )
+            # Visa väderprognosen för samma måltid under de tidigare
+            # raderna — OBS: denna körnings prognos, alltså inte
+            # nödvändigtvis samma prognos som den ursprungliga körningen
+            # använde (prognos_referenstid i loggen avgör det).
+            visa_prognosrad(cfg, prognos_df, maltid)
             return None
 
     # 4. Modellrader för båda linjerna (rieal kedja: steg 5–8)
@@ -194,6 +235,10 @@ def kor_live_prediktion(cfg):
     # 6. Visa och logga en rad per linje
     resultat = pd.DataFrame(poster)
     display_df(resultat[["linje", "modell", "prediktion", "mål_tid", "pm25_senaste"]])
+
+    # 7. Visa väderprognosen som den förskjutna linjen predikterades med.
+    visa_prognosrad(cfg, prognos_df, maltid)
+
     append_prediktioner_log(cfg.prediktioner_log, resultat)
 
     log.info("Loggade %d live-prediktioner i %s.", len(resultat), cfg.prediktioner_log)
