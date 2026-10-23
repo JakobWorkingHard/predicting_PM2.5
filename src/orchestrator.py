@@ -81,8 +81,9 @@ def orchestration(cfg: ProjectConfig):
         )
 
     # 6. Jämför de två championerna på testdatan (informationellt). 
-    # # Körs bara när den förskjutna linjen har tränats om och en modell 
-    # # blev champion, precis som tidigare. 
+    # Körs när en förskjuten champion-modell finns — även när båda
+    # linjerna hoppades över därför att championerna var färska — så att
+    # champion, förskjuten modell och baseline visas vid varje körning. 
     if forskjuten is not None: 
         forskjuten_modell, forskjuten_namn = forskjuten 
         champion_modell, champion_namn, _ = load_latest_champion( cfg.champion_log, 
