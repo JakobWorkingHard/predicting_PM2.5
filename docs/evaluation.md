@@ -56,19 +56,17 @@ Projektet minskar risken för dataläckage genom att:
 
 ### Skillnad mellan modellvarianterna
 
-**Den vanliga modellen** använder PM2.5 och väderobservationer från prognostillfället för att förutsäga PM2.5 sex timmar senare. Modellen tar inte uttryckligen hänsyn till hur vädret förändras under dessa sex timmar, utan använder de aktuella förhållandena som underlag för prognosen. Eftersom informationen är tillgänglig vid prognostillfället innebär detta inte dataläckage.
+**Den vanliga modellen** använder PM2.5 och väderobservationer från prognostillfället (T) för att förutsäga PM2.5 sex timmar senare (T+6). Modellen tar inte uttryckligen hänsyn till hur vädret förändras under dessa sex timmar, utan använder de aktuella förhållandena som underlag för prognosen.
 
-**Den förskjutna modellen** använder i stället väderförhållandena vid den framtida tidpunkt som prognosen avser. Vid historisk utvärdering används observerade vädervärden sex timmar framåt, medan live-prediktioner använder väderprognoser för samma tidpunkt.
+**Den förskjutna modellen (T+6)** tränas och utvärderas med väderobservationer från prognostillfället (T), där vädervärdena antas vara desamma sex timmar senare (T+6). Vid liveprediktioner används däremot väderprognoser för T+6.
+
+Eftersom båda modellerna tränas och utvärderas med information som är tillgänglig vid prognostillfället uppstår inget dataläckage från framtida väderobservationer.
 
 ### Begränsningar
 
+**Skillnad mellan historisk utvärdering och liveprediktion.** Den förskjutna modellen (T+6) tränas och utvärderas med antagandet att väderförhållandena är oförändrade sex timmar framåt, medan liveprediktioner använder väderprognoser för T+6. Skillnaden i väderindata innebär att de historiska resultaten inte nödvändigtvis motsvarar modellens prognosprecision vid verklig användning.
+
 **Testdata används vid championvalet.** Eftersom Test R² avgör om en ny kandidat ersätter befintlig champion är testperioden inte en helt oberoende slututvärdering. Upprepade jämförelser mot samma testdata kan innebära att modellvalet indirekt anpassas till testperioden, vilket kan ge en alltför optimistisk bild av framtida prestanda.
-
-**Den förskjutna modellen använder framtida väderobservationer vid historisk utvärdering.** Dessa observationer är inte tillgängliga när prognosen görs. Det innebär ett informationsläckage i den historiska utvärderingen och kan ge bättre resultat än vid verklig användning, där väderprognoser innehåller osäkerhet.
-
-För en rättvis jämförelse mellan modellvarianterna bör den förskjutna modellen även utvärderas med historiska väderprognoser som faktiskt fanns tillgängliga vid respektive prognostillfälle.
-
-Den kronologiska uppdelningen minskar risken för dataläckage, men dessa begränsningar behöver beaktas när resultaten tolkas.
 
 ## Modeller som jämförs
 
@@ -85,7 +83,7 @@ Följande modeller ingår i jämförelsen:
 - **LightGBM:** En snabb och effektiv variant av gradientboosting som bygger beslutsträd stegvis för att minska prognosfelen.
 - **XGBoost:** En annan variant av gradientboosting som bygger beslutsträd stegvis och använder regularisering för att minska risken för överanpassning.
 
-Samma modelltyper utvärderas för både den vanliga och den förskjutna modellvarianten. Skillnaden är att den vanliga modellen använder väderobservationer från prognostillfället, medan den förskjutna modellen använder väderdata från tidpunkten sex timmar senare.
+Samma modelltyper utvärderas för både den vanliga och den förskjutna modellvarianten. Den vanliga modellen använder väderobservationer från prognostillfället (T), medan den förskjutna modellen antar att väderförhållandena är oförändrade fram till T+6.
 
 ## Vinnande modeller (både vanlig och T+6)
 
@@ -99,7 +97,7 @@ Samtliga modeller jämfördes på samma 2 595 testobservationer från perioden 1
 |---|---:|---:|---:|---:|---|
 | Persistence-baseline | 1,741 | 2,628 | 0,414 | −0,004 | Senaste uppmätta PM2.5-värde används som prognos |
 | SVR (vanlig) | 1,545 | 2,265 | 0,565 | 0,056 | Väder vid prognostillfället |
-| **SVR (T+6)** | **1,536** | **2,231** | **0,578** | **0,103** | Observerat väder sex timmar framåt |
+| **SVR (T+6)** | **1,536** | **2,231** | **0,578** | **0,103** | Antaget oförändrat väder vid T+6 |
 
 ### Tolkning
 
@@ -107,7 +105,7 @@ Båda SVR-modellerna presterar bättre än persistence-baseline. Den vanliga mod
 
 Den förskjutna modellen uppnår något bättre resultat än den vanliga, men skillnaden är liten. Den har också något högre positiv Bias, vilket innebär en större genomsnittlig överskattning av PM2.5-halten.
 
-Resultatet för den förskjutna modellen bör tolkas med försiktighet eftersom historiska väderobservationer används vid utvärderingen, medan modellen vid live-prediktion använder väderprognoser. Den verkliga prognosprecisionen kan därför vara lägre.
+Resultatet för den förskjutna modellen bör tolkas med försiktighet eftersom den historiska utvärderingen bygger på antagandet att vädret vid T+6 är detsamma som vid T, medan liveprediktioner använder väderprognoser för T+6. Modellens träffsäkerhet vid liveprediktioner kan därför skilja sig från resultaten i den historiska utvärderingen.
 
 ## Felanalys
 
@@ -188,7 +186,9 @@ Utvärderingen visar att maskininlärningsmodellerna kan förbättra prognoserna
 
 - **Båda championmodellerna överträffar persistence-baseline.** På testdata uppnår de cirka 11–12 % lägre MAE, vilket visar att modellerna tillför prognosvärde. Förbättringen är dock relativt liten i absoluta tal.
 
-- **Den förskjutna modellen presterar något bättre.** Skillnaden mot den vanliga modellen är liten, och eftersom den förskjutna modellen utvärderats med observerat framtida väder är det osäkert om fördelen kvarstår vid användning av väderprognoser.
+- **Den förskjutna modellen presterar något bättre.** Skillnaden mot den vanliga modellen är liten. Eftersom den historiska utvärderingen bygger på antagandet att vädret vid T+6 är detsamma som vid T är det osäkert om fördelen kvarstår vid liveprediktioner med väderprognoser.
+
+- **Den förskjutna modellen presterar något bättre.** Skillnaden mot den vanliga modellen är liten. Vid liveprediktioner används väderprognoser för T+6 i stället för antaget oförändrat väder, vilket kan påverka modellens träffsäkerhet både positivt och negativt.
 
 - **Höga PM2.5-koncentrationer är en tydlig svaghet.** Den fördjupade analysen på valideringsdata visar att modellerna tenderar att underskatta höga halter och att persistence-baseline presterar bättre vid dessa nivåer.
 
@@ -220,7 +220,7 @@ Sammantaget visar resultaten modellernas prognosprecision under de undersökta f
 
 **Skillnader i datakvalitet.** Valideringsdatan består av kvalitetskontrollerade värden, medan testdatan kan innehålla preliminära mätvärden som senare korrigeras. Resultaten på testdata kan därför förändras om datan hämtas på nytt.
 
-**Väderprognosernas osäkerhet.** Vid faktisk användning använder T+6-modellen väderprognoser, medan utvärderingen bygger på observerade vädervärden. Resultaten kan därför ge en mer positiv bild av modellens prognosprecision än vad som uppnås i praktiken.
+**Liveprediktioner är ännu inte utvärderade.** Den förskjutna modellen (T+6) använder väderprognoser vid liveprediktioner i stället för antaget oförändrat väder. Det är därför ännu inte fastställt om detta förbättrar eller försämrar modellens träffsäkerhet jämfört med den historiska utvärderingen.
 
 **Geografisk avgränsning.** Modellen prognostiserar PM2.5 vid Malmö Dalaplan, med väderdata från Malmö A cirka fyra kilometer bort. Resultaten gäller de förhållanden som undersökts vid denna station.
 
@@ -242,9 +242,9 @@ I den aktuella körningen valdes Support Vector Regression (SVR) som bästa kand
 
 Följande förbättringar föreslås:
 
-1. **Förbättra prognoser vid höga PM2.5-halter.** Undersök alternativa modeller, viktade förlustfunktioner eller andra metoder som lägger större vikt vid höga koncentrationer.
+1. **Förbättra prognoser vid höga PM2.5-halter.** Undersök alternativa modeller, viktade förlustfunktioner eller andra metoder som lägger större vikt vid höga koncentrationer..
 
-2. **Utvärdera med verkliga väderprognoser.** Testa den förskjutna modellen med historiska väderprognoser för att få en mer rättvisande bild av dess prestanda vid faktisk användning.
+2. **Utvärdera med verkliga väderprognoser.** Utvärdera den förskjutna modellen med väderprognoser som fanns tillgängliga vid respektive prognostillfälle och jämför resultaten med den historiska utvärderingen som bygger på antaget oförändrat väder.
 
 3. **Undersök skillnadernas statistiska säkerhet.** Använd exempelvis konfidensintervall för att bedöma om skillnaderna mellan modellerna är tillräckligt tydliga för att motivera ett modellbyte.
 
