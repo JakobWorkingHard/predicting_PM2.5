@@ -29,10 +29,10 @@ Lösningen riktar sig till dem som vill veta hur luftkvaliteten vid Dalaplan san
 
 | Namn | Ansvarsområden |
 |---|---|
-| Jakob Ohlsén S. | FYLL I |
-| Daniel Rangmyr |  FYLL I |
-| Victoria Elmander | FYLL I  |
-| Elisabeth Weise | FYLL I  |
+| Jakob Ohlsén S. | live prediction |
+| Daniel Rangmyr |  Datahantering, dynamisk hantering av tidsperioder, logging. |
+| Victoria Elmander | Datakvalitet, granskning av metoder och analys av resultat  |
+| Elisabeth Weise | championlogik och pipelinestruktur  |
 
 ## Datakälla
 
