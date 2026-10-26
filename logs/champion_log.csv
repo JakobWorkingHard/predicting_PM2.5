@@ -1,3 +1,0 @@
-modell,timestamp,metric,score,sokvag
-SVR,2026-10-20T14:55:44.452448,Validation R²,0.7106431182018742,svr_Validation_R2_2026_10_20_14-55.joblib
-SVR,2026-10-20T15:02:30.395889,Validation R²,0.7106431182018742,svr_Validation_R2_2026_10_20_14-55.joblib
