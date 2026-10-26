@@ -1,5 +1,5 @@
 from pathlib import Path
-from src.metrics import evaluate_model, display_df
+from src.metrics import evaluate_model, display_df, metric_direction
 
 import joblib
 import pandas as pd
@@ -50,21 +50,19 @@ def load_latest_champion(log_path, models_dir):
     return joblib.load(modellfil), senaste["modell"], filnamn
 
 def _metric_key_and_direction(metric):
-    """
-    Översätter selection_metric, t.ex. "Validation R²", till nyckeln som
-    evaluate_model använder och anger vad som räknas som bäst:
-      "higher"          R²: högre är bättre
-      "lower"           MAE och RMSE: lägre är bättre
-      "closest_to_zero" Bias: närmare noll är bättre
-    Samma regler som select_best_model i metrics.py.
-    """
+
+    """Översätter t.ex. "Validation R²" till nyckeln i evaluate_model
+    ("R2") och hämtar riktningen från metrics.metric_direction."""
+    
     if "Bias" in metric:
-        return "Bias", "closest_to_zero"
-    if "R²" in metric or "R2" in metric:
-        return "R2", "higher"
-    if "RMSE" in metric or "MSE" in metric:
-        return "RMSE", "lower"
-    return "MAE", "lower"
+        key = "Bias"
+    elif "R²" in metric or "R2" in metric:
+        key = "R2"
+    elif "RMSE" in metric or "MSE" in metric:
+        key = "RMSE"
+    else:
+        key = "MAE"
+    return key, metric_direction(metric)
 
 def compete_with_champion(
     new_model,

@@ -760,3 +760,272 @@ target                    23
 2026-10-23 08:35:40,051 | WARNING | pm25 | Live-körning hoppades över: T_obs redan predikterad (slå av [live].idempotent för att köra ändå).
 2026-10-23 08:35:40,051 | INFO | pm25 | Tidigare prediktioner för T_obs 2026-10-23 08:00:00+02:00:
 2026-10-23 08:35:40,055 | INFO | __main__ | Live-körningen är klar
+2026-10-23 09:03:32,896 | INFO | __main__ | Startar PM2.5-projektets pipeline
+2026-10-23 09:03:38,109 | INFO | __main__ | Konfigurationen har laddats
+2026-10-23 09:03:38,109 | INFO | src.orchestrator | Startar projektets orchestration.
+2026-10-23 09:03:38,555 | INFO | src.data_pipeline | Dynamisk testperiod: 2026-07-01 00:00:00+02:00 till 2026-10-23 05:00:00+02:00
+2026-10-23 09:03:38,592 | INFO | src.data_pipeline | PM2.5-testdata har hämtats och sparats.
+2026-10-23 09:03:40,668 | INFO | src.data_pipeline | Vädertestdata har hämtats och sparats.
+2026-10-23 09:03:40,668 | INFO | src.data_pipeline | Testdata för PM2.5 och väder har sammanfogats.
+2026-10-23 09:03:40,819 | INFO | src.data_pipeline | Träningsdata för PM2.5 har hämtats och sparats.
+2026-10-23 09:03:40,963 | INFO | src.data_pipeline | Träningsdata för väder har hämtats och sparats.
+2026-10-23 09:03:40,963 | INFO | src.data_pipeline | Träningsdata för PM2.5 och väder har sammanfogats.
+2026-10-23 09:03:41,002 | INFO | src.data_pipeline | Valideringsdata för PM2.5 har hämtats och sparats.
+2026-10-23 09:03:41,037 | INFO | src.data_pipeline | Valideringsdata för väder har hämtats och sparats.
+2026-10-23 09:03:41,037 | INFO | src.data_pipeline | Valideringsdata för PM2.5 och väder har sammanfogats.
+2026-10-23 09:03:41,076 | INFO | src.data_pipeline | Bearbetar dataset: train_processed_2023-05-26_2025-12-31.csv
+2026-10-23 09:03:41,077 | INFO | src.validate_process | Startar datavalidering.
+2026-10-23 09:03:41,267 | INFO | src.validate_process | Datavalidering slutförd. Antal rader: 22825, antal kolumner: 7.
+2026-10-23 09:03:41,299 | INFO | src.io | --- Datakontroll: train_processed_2023-05-26_2025-12-31.csv ---
+2026-10-23 09:03:41,299 | INFO | src.io | Rader i mergad fil: 22825
+2026-10-23 09:03:41,299 | INFO | src.io | Rader efter validate_data: 22825
+2026-10-23 09:03:41,299 | INFO | src.io | Rader efter dropna: 21555
+2026-10-23 09:03:41,299 | INFO | src.io | Borttagna rader: 1270 (5.6%)
+2026-10-23 09:03:41,300 | INFO | src.io | Saknade värden per kolumn (en rad kan sakna flera):
+pm25                      154
+Lufttemperatur            536
+vind_sin                  572
+vind_cos                  572
+Vindhastighet             572
+Relativ luftfuktighet     570
+Nederbördsmängd          1069
+target                    158
+2026-10-23 09:03:41,303 | INFO | src.io | Loggade datakontroll i: C:\Users\Jakob\Desktop\pm2.5\predicting_PM2.5\logs\datakontroll.csv
+2026-10-23 09:03:41,304 | INFO | src.data_pipeline | Bearbetat dataset har sparats: train_processed_2023-05-26_2025-12-31.csv
+2026-10-23 09:03:41,305 | INFO | src.data_pipeline | Bearbetar dataset: val_processed_2026-01-01_2026-06-30.csv
+2026-10-23 09:03:41,305 | INFO | src.validate_process | Startar datavalidering.
+2026-10-23 09:03:41,336 | INFO | src.validate_process | Datavalidering slutförd. Antal rader: 4343, antal kolumner: 7.
+2026-10-23 09:03:41,360 | INFO | src.io | --- Datakontroll: val_processed_2026-01-01_2026-06-30.csv ---
+2026-10-23 09:03:41,360 | INFO | src.io | Rader i mergad fil: 4343
+2026-10-23 09:03:41,361 | INFO | src.io | Rader efter validate_data: 4343
+2026-10-23 09:03:41,361 | INFO | src.io | Rader efter dropna: 4282
+2026-10-23 09:03:41,361 | INFO | src.io | Borttagna rader: 61 (1.4%)
+2026-10-23 09:03:41,362 | INFO | src.io | Saknade värden per kolumn (en rad kan sakna flera):
+pm25                3
+vind_sin            2
+vind_cos            2
+Vindhastighet       2
+Nederbördsmängd    48
+target              8
+2026-10-23 09:03:41,363 | INFO | src.io | Loggade datakontroll i: C:\Users\Jakob\Desktop\pm2.5\predicting_PM2.5\logs\datakontroll.csv
+2026-10-23 09:03:41,364 | INFO | src.data_pipeline | Bearbetat dataset har sparats: val_processed_2026-01-01_2026-06-30.csv
+2026-10-23 09:03:41,365 | INFO | src.data_pipeline | Bearbetar dataset: test_processed_2026-07-01_2026-10-23.csv
+2026-10-23 09:03:41,365 | INFO | src.validate_process | Startar datavalidering.
+2026-10-23 09:03:41,395 | INFO | src.validate_process | Datavalidering slutförd. Antal rader: 2741, antal kolumner: 7.
+2026-10-23 09:03:41,448 | INFO | src.io | --- Datakontroll: test_processed_2026-07-01_2026-10-23.csv ---
+2026-10-23 09:03:41,448 | INFO | src.io | Rader i mergad fil: 2741
+2026-10-23 09:03:41,448 | INFO | src.io | Rader efter validate_data: 2741
+2026-10-23 09:03:41,448 | INFO | src.io | Rader efter dropna: 2616
+2026-10-23 09:03:41,448 | INFO | src.io | Borttagna rader: 125 (4.6%)
+2026-10-23 09:03:41,449 | INFO | src.io | Saknade värden per kolumn (en rad kan sakna flera):
+pm25               17
+Nederbördsmängd    96
+target             23
+2026-10-23 09:03:41,451 | INFO | src.io | Loggade datakontroll i: C:\Users\Jakob\Desktop\pm2.5\predicting_PM2.5\logs\datakontroll.csv
+2026-10-23 09:03:41,452 | INFO | src.data_pipeline | Bearbetat dataset har sparats: test_processed_2026-07-01_2026-10-23.csv
+2026-10-23 09:03:41,453 | INFO | src.data_pipeline | Bearbetar dataset: train_processed_forskjuten_2023-05-26_2025-12-31_h6.csv
+2026-10-23 09:03:41,453 | INFO | src.validate_process | Startar datavalidering.
+2026-10-23 09:03:41,614 | INFO | src.validate_process | Datavalidering slutförd. Antal rader: 22825, antal kolumner: 7.
+2026-10-23 09:03:41,644 | INFO | src.io | --- Datakontroll: train_processed_forskjuten_2023-05-26_2025-12-31_h6.csv ---
+2026-10-23 09:03:41,645 | INFO | src.io | Rader i mergad fil: 22825
+2026-10-23 09:03:41,645 | INFO | src.io | Rader efter validate_data: 22825
+2026-10-23 09:03:41,645 | INFO | src.io | Rader efter dropna: 21555
+2026-10-23 09:03:41,645 | INFO | src.io | Borttagna rader: 1270 (5.6%)
+2026-10-23 09:03:41,646 | INFO | src.io | Saknade värden per kolumn (en rad kan sakna flera):
+pm25                      154
+Lufttemperatur            542
+vind_sin                  578
+vind_cos                  578
+Vindhastighet             578
+Relativ luftfuktighet     576
+Nederbördsmängd          1075
+target                    158
+2026-10-23 09:03:41,648 | INFO | src.io | Loggade datakontroll i: C:\Users\Jakob\Desktop\pm2.5\predicting_PM2.5\logs\datakontroll.csv
+2026-10-23 09:03:41,648 | INFO | src.data_pipeline | Bearbetat dataset har sparats: train_processed_forskjuten_2023-05-26_2025-12-31_h6.csv
+2026-10-23 09:03:41,649 | INFO | src.data_pipeline | Bearbetar dataset: val_processed_forskjuten_2026-01-01_2026-06-30_h6.csv
+2026-10-23 09:03:41,649 | INFO | src.validate_process | Startar datavalidering.
+2026-10-23 09:03:41,676 | INFO | src.validate_process | Datavalidering slutförd. Antal rader: 4343, antal kolumner: 7.
+2026-10-23 09:03:41,691 | INFO | src.io | --- Datakontroll: val_processed_forskjuten_2026-01-01_2026-06-30_h6.csv ---
+2026-10-23 09:03:41,691 | INFO | src.io | Rader i mergad fil: 4343
+2026-10-23 09:03:41,691 | INFO | src.io | Rader efter validate_data: 4343
+2026-10-23 09:03:41,691 | INFO | src.io | Rader efter dropna: 4282
+2026-10-23 09:03:41,691 | INFO | src.io | Borttagna rader: 61 (1.4%)
+2026-10-23 09:03:41,692 | INFO | src.io | Saknade värden per kolumn (en rad kan sakna flera):
+pm25                      3
+Lufttemperatur            6
+vind_sin                  8
+vind_cos                  8
+Vindhastighet             8
+Relativ luftfuktighet     6
+Nederbördsmängd          54
+target                    8
+2026-10-23 09:03:41,694 | INFO | src.io | Loggade datakontroll i: C:\Users\Jakob\Desktop\pm2.5\predicting_PM2.5\logs\datakontroll.csv
+2026-10-23 09:03:41,694 | INFO | src.data_pipeline | Bearbetat dataset har sparats: val_processed_forskjuten_2026-01-01_2026-06-30_h6.csv
+2026-10-23 09:03:41,695 | INFO | src.data_pipeline | Bearbetar dataset: test_processed_forskjuten_2026-07-01_2026-10-23_h6.csv
+2026-10-23 09:03:41,695 | INFO | src.validate_process | Startar datavalidering.
+2026-10-23 09:03:41,716 | INFO | src.validate_process | Datavalidering slutförd. Antal rader: 2741, antal kolumner: 7.
+2026-10-23 09:03:41,728 | INFO | src.io | --- Datakontroll: test_processed_forskjuten_2026-07-01_2026-10-23_h6.csv ---
+2026-10-23 09:03:41,728 | INFO | src.io | Rader i mergad fil: 2741
+2026-10-23 09:03:41,728 | INFO | src.io | Rader efter validate_data: 2741
+2026-10-23 09:03:41,728 | INFO | src.io | Rader efter dropna: 2616
+2026-10-23 09:03:41,728 | INFO | src.io | Borttagna rader: 125 (4.6%)
+2026-10-23 09:03:41,729 | INFO | src.io | Saknade värden per kolumn (en rad kan sakna flera):
+pm25                      17
+Lufttemperatur             6
+vind_sin                   6
+vind_cos                   6
+Vindhastighet              6
+Relativ luftfuktighet      6
+Nederbördsmängd          102
+target                    23
+2026-10-23 09:03:41,731 | INFO | src.io | Loggade datakontroll i: C:\Users\Jakob\Desktop\pm2.5\predicting_PM2.5\logs\datakontroll.csv
+2026-10-23 09:03:41,731 | INFO | src.data_pipeline | Bearbetat dataset har sparats: test_processed_forskjuten_2026-07-01_2026-10-23_h6.csv
+2026-10-23 09:03:41,735 | INFO | src.model_pipeline | En befintlig vanlig champion är fortfarande aktuell. Tidpunkt: 2026-10-22T09:32:30.180730 | Modell: SVR vanlig (T+6) | Mått: Validation R² | Score: 0.3992065096524583
+2026-10-23 09:03:41,737 | INFO | src.champion | Läser in champion SVR vanlig (T+6) från C:\Users\Jakob\Desktop\pm2.5\predicting_PM2.5\models\svr_vanlig_(t+6)_Validation_R2_2026_10_22_09-32.joblib
+2026-10-23 09:03:41,741 | INFO | src.model_pipeline | Läser in den färska vanlig-championen SVR vanlig (T+6) för jämförelsen.
+2026-10-23 09:03:41,744 | INFO | src.model_pipeline | En befintlig förskjuten champion är fortfarande aktuell. Tidpunkt: 2026-10-22T09:33:38.073375 | Modell: SVR forskjuten (T+6) | Mått: Validation R² | Score: 0.4440726879071481
+2026-10-23 09:03:41,747 | INFO | src.champion | Läser in champion SVR forskjuten (T+6) från C:\Users\Jakob\Desktop\pm2.5\predicting_PM2.5\models\forskjuten_svr_forskjuten_(t+6)_Validation_R2_2026_10_22_09-33.joblib
+2026-10-23 09:03:41,751 | INFO | src.model_pipeline | Läser in den färska förskjuten-championen SVR forskjuten (T+6) för jämförelsen.
+2026-10-23 09:03:41,755 | INFO | src.champion | Läser in champion SVR vanlig (T+6) från C:\Users\Jakob\Desktop\pm2.5\predicting_PM2.5\models\svr_vanlig_(t+6)_Validation_R2_2026_10_22_09-32.joblib
+2026-10-23 09:03:50,054 | INFO | src.metrics | Head-to-head på testdata (2592 gemensamma rader) är klar.
+2026-10-23 09:03:50,054 | INFO | __main__ | PM2.5-projektets pipeline har slutförts
+2026-10-23 09:04:33,291 | INFO | __main__ | Startar live-prediktion
+2026-10-23 09:04:38,018 | INFO | pm25 | Hämtar SMHI-punktprognos...
+2026-10-23 09:04:38,424 | INFO | pm25 | Prognos hämtad: referenstid 2026-10-23 06:45:00+00:00, 81 steg fram till 2026-11-02 13:00:00+01:00.
+2026-10-23 09:04:39,426 | INFO | pm25 | Senaste PM2.5 hämtad: 47 rader, senaste 48 timmarna.
+2026-10-23 09:04:41,513 | INFO | pm25 | Senaste väderobservationer hämtade: 47 timmar, 5 parametrar.
+2026-10-23 09:04:41,515 | INFO | pm25 | Ankarpunkt T_obs: 2026-10-23 08:00:00+02:00
+2026-10-23 09:04:41,516 | INFO | pm25 | T_obs: 2026-10-23 08:00:00+02:00 (1.1 h gammal) -> prediktion för 2026-10-23 14:00:00+02:00
+2026-10-23 09:04:41,519 | WARNING | pm25 | Live-körning hoppades över: T_obs redan predikterad (slå av [live].idempotent för att köra ändå).
+2026-10-23 09:04:41,519 | INFO | pm25 | Tidigare prediktioner för T_obs 2026-10-23 08:00:00+02:00:
+2026-10-23 09:04:41,524 | INFO | __main__ | Live-körningen är klar
+2026-10-23 09:06:28,025 | INFO | __main__ | Startar live-prediktion
+2026-10-23 09:06:32,744 | INFO | pm25 | Hämtar SMHI-punktprognos...
+2026-10-23 09:06:33,166 | INFO | pm25 | Prognos hämtad: referenstid 2026-10-23 06:45:00+00:00, 81 steg fram till 2026-11-02 13:00:00+01:00.
+2026-10-23 09:06:34,171 | INFO | pm25 | Senaste PM2.5 hämtad: 47 rader, senaste 48 timmarna.
+2026-10-23 09:06:36,252 | INFO | pm25 | Senaste väderobservationer hämtade: 47 timmar, 5 parametrar.
+2026-10-23 09:06:36,253 | INFO | pm25 | Ankarpunkt T_obs: 2026-10-23 08:00:00+02:00
+2026-10-23 09:06:36,254 | INFO | pm25 | T_obs: 2026-10-23 08:00:00+02:00 (1.1 h gammal) -> prediktion för 2026-10-23 14:00:00+02:00
+2026-10-23 09:06:36,256 | WARNING | pm25 | Live-körning hoppades över: T_obs redan predikterad (slå av [live].idempotent för att köra ändå).
+2026-10-23 09:06:36,257 | INFO | pm25 | Tidigare prediktioner för T_obs 2026-10-23 08:00:00+02:00:
+2026-10-23 09:06:36,261 | INFO | __main__ | Live-körningen är klar
+2026-10-23 09:18:17,992 | INFO | __main__ | Startar live-prediktion
+2026-10-23 09:18:22,948 | INFO | pm25 | Hämtar SMHI-punktprognos...
+2026-10-23 09:18:23,345 | INFO | pm25 | Prognos hämtad: referenstid 2026-10-23 06:45:00+00:00, 81 steg fram till 2026-11-02 13:00:00+01:00.
+2026-10-23 09:18:24,918 | INFO | pm25 | Senaste PM2.5 hämtad: 48 rader, senaste 48 timmarna.
+2026-10-23 09:18:26,885 | INFO | pm25 | Senaste väderobservationer hämtade: 47 timmar, 5 parametrar.
+2026-10-23 09:18:26,889 | INFO | pm25 | Ankarpunkt T_obs: 2026-10-23 08:00:00+02:00
+2026-10-23 09:18:26,889 | INFO | pm25 | T_obs: 2026-10-23 08:00:00+02:00 (1.3 h gammal) -> prediktion för 2026-10-23 14:00:00+02:00
+2026-10-23 09:18:26,892 | WARNING | pm25 | Live-körning hoppades över: T_obs redan predikterad (slå av [live].idempotent för att köra ändå).
+2026-10-23 09:18:26,892 | INFO | pm25 | Tidigare prediktioner för T_obs 2026-10-23 08:00:00+02:00:
+2026-10-23 09:18:26,897 | INFO | __main__ | Live-körningen är klar
+2026-10-23 09:33:00,022 | INFO | src.champion | Champion-tävling på testdata (3 rader), mått MAE: dagens 0.0000, tidigare 2.0000. Vinnare: new.
+2026-10-23 09:33:00,105 | INFO | pm25 | Senaste PM2.5 hämtad: 3 rader, senaste 48 timmarna.
+2026-10-23 09:33:00,224 | INFO | src.metrics | Head-to-head på testdata (3 gemensamma rader) är klar.
+2026-10-23 09:33:00,241 | INFO | src.metrics | Head-to-head på testdata (2 gemensamma rader) är klar.
+2026-10-23 09:33:00,244 | INFO | pm25 | Ankarpunkt T_obs: 2026-10-21 14:00:00+02:00
+2026-10-23 09:33:00,246 | INFO | pm25 | Ankarpunkt T_obs: 2026-10-21 11:00:00+02:00
+2026-10-23 09:33:00,249 | WARNING | pm25 | Ingen komplett timme hittades — ingen ankarpunkt.
+2026-10-23 09:33:00,253 | INFO | pm25 | Ankarpunkt T_obs: 2026-10-21 11:00:00+02:00
+2026-10-23 09:33:30,321 | INFO | __main__ | Startar PM2.5-projektets pipeline
+2026-10-23 09:33:35,125 | INFO | __main__ | Konfigurationen har laddats
+2026-10-23 09:33:35,125 | INFO | src.orchestrator | Startar projektets orchestration.
+2026-10-23 09:33:35,128 | INFO | src.orchestrator | Den vanliga championen är fortfarande färsk (gräns: 7 dagar). Pipelinen hoppas över — visar senaste jämförelseresultat.
+2026-10-23 09:33:35,131 | INFO | __main__ | PM2.5-projektets pipeline har slutförts
+2026-10-23 09:35:03,687 | INFO | __main__ | Startar PM2.5-projektets pipeline
+2026-10-23 09:35:08,411 | INFO | __main__ | Konfigurationen har laddats
+2026-10-23 09:35:08,412 | INFO | src.orchestrator | Startar projektets orchestration.
+2026-10-23 09:35:08,414 | INFO | src.orchestrator | Den vanliga championen är fortfarande färsk (gräns: 7 dagar). Pipelinen hoppas över — visar senaste jämförelseresultat.
+2026-10-23 09:35:08,418 | INFO | __main__ | PM2.5-projektets pipeline har slutförts
+2026-10-23 13:32:38,751 | INFO | __main__ | Startar PM2.5-projektets pipeline
+2026-10-23 13:32:40,893 | INFO | __main__ | Konfigurationen har laddats
+2026-10-23 13:32:40,893 | INFO | src.orchestrator | Startar projektets orchestration.
+2026-10-23 13:32:40,904 | INFO | src.orchestrator | Den vanliga championen är fortfarande färsk (gräns: 7 dagar). Pipelinen hoppas över — visar senaste jämförelseresultat.
+2026-10-23 13:32:40,912 | INFO | __main__ | PM2.5-projektets pipeline har slutförts
+2026-10-23 13:32:54,166 | INFO | __main__ | Startar live-prediktion
+2026-10-23 13:32:56,032 | INFO | pm25 | Hämtar SMHI-punktprognos...
+2026-10-23 13:32:56,439 | INFO | pm25 | Prognos hämtad: referenstid 2026-10-23 11:00:00+00:00, 84 steg fram till 2026-11-02 13:00:00+01:00.
+2026-10-23 13:32:57,415 | INFO | pm25 | Senaste PM2.5 hämtad: 48 rader, senaste 48 timmarna.
+2026-10-23 13:32:59,369 | INFO | pm25 | Senaste väderobservationer hämtade: 48 timmar, 5 parametrar.
+2026-10-23 13:32:59,371 | INFO | pm25 | Ankarpunkt T_obs: 2026-10-23 13:00:00+02:00
+2026-10-23 13:32:59,371 | INFO | pm25 | T_obs: 2026-10-23 13:00:00+02:00 (0.5 h gammal) -> prediktion för 2026-10-23 19:00:00+02:00
+2026-10-23 13:32:59,375 | INFO | pm25 | Väderprognos för måltiden 2026-10-23 19:00:00+02:00 (använd av linjen forskjuten): Lufttemperatur=10.7, Vindriktning=140, Vindhastighet=6.1, Relativ luftfuktighet=92, Nederbördsmängd=0.2
+2026-10-23 13:32:59,386 | INFO | pm25 | Modellrader byggda för T_obs 2026-10-23 13:00:00+02:00, måltid 2026-10-23 19:00:00+02:00.
+2026-10-23 13:32:59,469 | INFO | src.champion | Läser in champion SVR forskjuten (T+6) från C:\Users\Jakob\Desktop\pm2.5\predicting_PM2.5\models\forskjuten_svr_forskjuten_(t+6)_Validation_R2_2026_10_22_09-33.joblib
+2026-10-23 13:32:59,530 | INFO | pm25 | Loggade 2 live-prediktioner i C:\Users\Jakob\Desktop\pm2.5\predicting_PM2.5\prognoser\prediktioner_live.csv.
+2026-10-23 13:32:59,531 | INFO | __main__ | Live-körningen är klar
+2026-10-23 13:33:49,636 | INFO | __main__ | Startar live-prediktion
+2026-10-23 13:33:52,503 | INFO | pm25 | Senaste PM2.5 hämtad: 168 rader, senaste 168 timmarna.
+2026-10-23 13:33:52,568 | INFO | pm25 | Uppföljning: 2 rättade prediktioner.
+2026-10-23 13:33:52,570 | INFO | __main__ | Live-körningen är klar
+2026-10-23 13:37:37,202 | INFO | pm25 | Ankarpunkt T_obs: 2026-10-21 14:00:00+02:00
+2026-10-23 13:37:37,206 | INFO | pm25 | Ankarpunkt T_obs: 2026-10-21 11:00:00+02:00
+2026-10-23 13:37:37,209 | WARNING | pm25 | Ingen komplett timme hittades — ingen ankarpunkt.
+2026-10-23 13:37:37,215 | INFO | pm25 | Ankarpunkt T_obs: 2026-10-21 11:00:00+02:00
+2026-10-23 13:38:25,694 | INFO | pm25 | Ankarpunkt T_obs: 2026-10-21 14:00:00+02:00
+2026-10-23 13:38:25,697 | INFO | pm25 | Ankarpunkt T_obs: 2026-10-21 11:00:00+02:00
+2026-10-23 13:38:25,700 | WARNING | pm25 | Ingen komplett timme hittades — ingen ankarpunkt.
+2026-10-23 13:38:25,703 | INFO | pm25 | Ankarpunkt T_obs: 2026-10-21 11:00:00+02:00
+2026-10-23 13:38:37,737 | INFO | pm25 | Ankarpunkt T_obs: 2026-10-21 14:00:00+02:00
+2026-10-23 13:38:37,741 | INFO | pm25 | Ankarpunkt T_obs: 2026-10-21 11:00:00+02:00
+2026-10-23 13:38:37,744 | WARNING | pm25 | Ingen komplett timme hittades — ingen ankarpunkt.
+2026-10-23 13:38:37,746 | INFO | pm25 | Ankarpunkt T_obs: 2026-10-21 11:00:00+02:00
+2026-10-23 13:39:35,557 | INFO | pm25 | Ankarpunkt T_obs: 2026-10-21 14:00:00+02:00
+2026-10-23 13:39:35,562 | INFO | pm25 | Ankarpunkt T_obs: 2026-10-21 11:00:00+02:00
+2026-10-23 13:39:35,565 | WARNING | pm25 | Ingen komplett timme hittades — ingen ankarpunkt.
+2026-10-23 13:39:35,568 | INFO | pm25 | Ankarpunkt T_obs: 2026-10-21 11:00:00+02:00
+2026-10-23 13:39:35,676 | INFO | src.metrics | Head-to-head på testdata (3 gemensamma rader) är klar.
+2026-10-23 13:39:35,691 | INFO | src.metrics | Head-to-head på testdata (2 gemensamma rader) är klar.
+2026-10-23 13:39:41,252 | INFO | src.champion | Champion-tävling på testdata (3 rader), mått MAE: dagens 0.0000, tidigare 2.0000. Vinnare: new.
+2026-10-23 13:39:41,332 | INFO | pm25 | Senaste PM2.5 hämtad: 3 rader, senaste 48 timmarna.
+2026-10-23 13:39:41,447 | INFO | src.metrics | Head-to-head på testdata (3 gemensamma rader) är klar.
+2026-10-23 13:39:41,463 | INFO | src.metrics | Head-to-head på testdata (2 gemensamma rader) är klar.
+2026-10-23 13:39:41,467 | INFO | pm25 | Ankarpunkt T_obs: 2026-10-21 14:00:00+02:00
+2026-10-23 13:39:41,469 | INFO | pm25 | Ankarpunkt T_obs: 2026-10-21 11:00:00+02:00
+2026-10-23 13:39:41,472 | WARNING | pm25 | Ingen komplett timme hittades — ingen ankarpunkt.
+2026-10-23 13:39:41,475 | INFO | pm25 | Ankarpunkt T_obs: 2026-10-21 11:00:00+02:00
+2026-10-23 13:56:11,670 | INFO | __main__ | Startar live-prediktion
+2026-10-23 13:56:13,859 | INFO | pm25 | Hämtar SMHI-punktprognos...
+2026-10-23 13:56:14,270 | INFO | pm25 | Prognos hämtad: referenstid 2026-10-23 11:30:00+00:00, 84 steg fram till 2026-11-02 13:00:00+01:00.
+2026-10-23 13:56:15,296 | INFO | pm25 | Senaste PM2.5 hämtad: 48 rader, senaste 48 timmarna.
+2026-10-23 13:56:17,301 | INFO | pm25 | Senaste väderobservationer hämtade: 48 timmar, 5 parametrar.
+2026-10-23 13:56:17,304 | INFO | pm25 | Ankarpunkt T_obs: 2026-10-23 13:00:00+02:00
+2026-10-23 13:56:17,304 | INFO | pm25 | T_obs: 2026-10-23 13:00:00+02:00 (0.9 h gammal) -> prediktion för 2026-10-23 19:00:00+02:00
+2026-10-23 13:56:17,307 | WARNING | pm25 | Live-körning hoppades över: T_obs redan predikterad (slå av [live].idempotent för att köra ändå).
+2026-10-23 13:56:17,307 | INFO | pm25 | Tidigare prediktioner för T_obs 2026-10-23 13:00:00+02:00:
+2026-10-23 13:56:17,311 | INFO | __main__ | Live-körningen är klar
+2026-10-23 13:56:44,976 | INFO | __main__ | Startar live-prediktion
+2026-10-23 13:56:47,965 | INFO | pm25 | Senaste PM2.5 hämtad: 168 rader, senaste 168 timmarna.
+2026-10-23 13:56:48,018 | INFO | pm25 | Uppföljning: 2 rättade prediktioner.
+2026-10-23 13:56:48,019 | INFO | __main__ | Live-körningen är klar
+2026-10-23 13:57:37,385 | INFO | __main__ | Startar live-prediktion
+2026-10-23 13:57:40,333 | INFO | pm25 | Senaste PM2.5 hämtad: 168 rader, senaste 168 timmarna.
+2026-10-23 13:57:40,383 | INFO | pm25 | Uppföljning: 2 rättade prediktioner.
+2026-10-23 13:57:40,384 | INFO | __main__ | Live-körningen är klar
+2026-10-23 14:08:04,119 | INFO | __main__ | Startar PM2.5-projektets pipeline
+2026-10-23 14:08:06,025 | INFO | __main__ | Konfigurationen har laddats
+2026-10-23 14:08:06,025 | INFO | src.orchestrator | Startar projektets orchestration.
+2026-10-23 14:08:06,030 | INFO | src.orchestrator | Den vanliga championen är fortfarande färsk (gräns: 7 dagar). Pipelinen hoppas över — visar senaste jämförelseresultat.
+2026-10-23 14:08:06,035 | INFO | __main__ | PM2.5-projektets pipeline har slutförts
+2026-10-23 14:09:02,706 | INFO | __main__ | Startar live-prediktion
+2026-10-23 14:09:04,608 | INFO | pm25 | Hämtar SMHI-punktprognos...
+2026-10-23 14:09:04,993 | INFO | pm25 | Prognos hämtad: referenstid 2026-10-23 11:45:00+00:00, 84 steg fram till 2026-11-02 13:00:00+01:00.
+2026-10-23 14:09:05,974 | INFO | pm25 | Senaste PM2.5 hämtad: 47 rader, senaste 48 timmarna.
+2026-10-23 14:09:07,989 | INFO | pm25 | Senaste väderobservationer hämtade: 47 timmar, 5 parametrar.
+2026-10-23 14:09:07,990 | INFO | pm25 | Ankarpunkt T_obs: 2026-10-23 13:00:00+02:00
+2026-10-23 14:09:07,991 | INFO | pm25 | T_obs: 2026-10-23 13:00:00+02:00 (1.2 h gammal) -> prediktion för 2026-10-23 19:00:00+02:00
+2026-10-23 14:09:07,993 | WARNING | pm25 | Live-körning hoppades över: T_obs redan predikterad (slå av [live].idempotent för att köra ändå).
+2026-10-23 14:09:07,993 | INFO | pm25 | Tidigare prediktioner för T_obs 2026-10-23 13:00:00+02:00:
+2026-10-23 14:09:07,997 | INFO | __main__ | Live-körningen är klar
+2026-10-23 14:09:24,226 | INFO | __main__ | Startar live-prediktion
+2026-10-23 14:09:27,221 | INFO | pm25 | Senaste PM2.5 hämtad: 167 rader, senaste 168 timmarna.
+2026-10-23 14:09:27,271 | INFO | pm25 | Uppföljning: 2 rättade prediktioner.
+2026-10-23 14:09:27,272 | INFO | __main__ | Live-körningen är klar
+2026-10-23 14:10:50,849 | INFO | src.champion | Champion-tävling på testdata (3 rader), mått MAE: dagens 0.0000, tidigare 2.0000. Vinnare: new.
+2026-10-23 14:10:50,864 | INFO | pm25 | Senaste PM2.5 hämtad: 3 rader, senaste 48 timmarna.
+2026-10-23 14:10:50,991 | INFO | src.metrics | Head-to-head på testdata (3 gemensamma rader) är klar.
+2026-10-23 14:10:51,008 | INFO | src.metrics | Head-to-head på testdata (2 gemensamma rader) är klar.
+2026-10-23 14:10:51,012 | INFO | pm25 | Ankarpunkt T_obs: 2026-10-21 14:00:00+02:00
+2026-10-23 14:10:51,016 | INFO | pm25 | Ankarpunkt T_obs: 2026-10-21 11:00:00+02:00
+2026-10-23 14:10:51,020 | WARNING | pm25 | Ingen komplett timme hittades — ingen ankarpunkt.
+2026-10-23 14:10:51,023 | INFO | pm25 | Ankarpunkt T_obs: 2026-10-21 11:00:00+02:00
