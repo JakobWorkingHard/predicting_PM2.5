@@ -2,9 +2,10 @@
 
 ## Sammanfattning
 
-Utvärderingen visar att maskininlärningsmodeller kan förbättra prognoserna för PM2.5 vid Malmö Dalaplan sex timmar framåt. I den aktuella körningen presterar Support Vector Regression (SVR) bäst, med cirka 11–12 % lägre MAE än persistence-baseline på testdata. Den förskjutna modellen uppnår något bättre resultat än den vanliga, men skillnaden är liten och utvärderingen bygger på observerade framtida vädervärden. Felanalysen visar samtidigt att modellerna har svårt att förutsäga höga PM2.5-koncentrationer. Resultaten stödjer därför användning för generella prognoser, men inte som ett tillförlitligt varningssystem för höga föroreningsnivåer.
+Utvärderingen visar att maskininlärningsmodeller kan förbättra prognoserna för PM2.5 vid Malmö Dalaplan sex timmar framåt. I den aktuella körningen presterar Support Vector Regression (SVR) bäst, med cirka 11–12 % lägre MAE än persistence-baseline på testdata. Den förskjutna modellen uppnår något bättre resultat än den vanliga, men skillnaden är liten och utvärderingen bygger på observerade framtida vädervärden. Felanalysen visar samtidigt att modellerna har svårt att förutsäga höga PM2.5-koncentrationer. Resultaten visar potential för generella prognoser, men ger inte tillräckligt stöd för användning som ett tillförlitligt varningssystem för höga föroreningsnivåer.
 
 ## Vad vi mäter och varför
+
 Modellerna utvärderas med flera mått:
 
 MAE: Genomsnittligt prognosfel i µg/m³. Används för att välja bästa kandidatmodell.
@@ -24,7 +25,9 @@ MAE prioriteras vid kandidatvalet för att minimera det genomsnittliga prognosfe
 Datan delas upp kronologiskt i träning, validering och test. Perioderna beräknas dynamiskt utifrån senast tillgängliga väderarkivdata från SMHI. Uppdelningen säkerställer att modellerna tränas på äldre observationer och utvärderas på senare data.
 
 - **Träning:** Från 2023-05-26 till dagen före valideringsperiodens start. Används för att träna modellerna.
+
 - **Validering:** De sex senaste hela kalendermånaderna före månaden för senast tillgängliga väderarkivdata. Används för att välja bästa kandidatmodell utifrån lägst MAE.
+
 - **Test:** En dynamisk period med senare observationer. Används för att jämföra bästa kandidat med befintlig champion utifrån högst R².
 
 **Prognoshorisonten är sex timmar.** Varje observation används för att förutsäga PM2.5-halten sex timmar senare. Projektet jämför två modellvarianter: en med väderobservationer vid prognostillfället och en förskjuten variant med väderdata från tidpunkten som prognosen avser. Vid live-prediktion använder den förskjutna varianten väderprognoser i stället för framtida observationer.
@@ -32,9 +35,13 @@ Datan delas upp kronologiskt i träning, validering och test. Perioderna beräkn
 ### Data från körningen 2026-10-23
 
 | Del | Period | Rader före rensning | Rader efter rensning |
+
 |---|---|---:|---:|
+
 | Träning | 2023-05-26 – 2025-12-31 | 22 825 | 21 555 |
+
 | Validering | 2026-01-01 – 2026-06-30 | 4 343 | 4 282 |
+
 | Test | 2026-07-01 – 2026-10-23 | 2 744 | 2 619 |
 
 Efter att perioderna fastställts bearbetas datan och rader med saknade värden tas bort. Vid denna körning försvann 5,6 % av träningsdatan, 1,4 % av valideringsdatan och 4,6 % av testdatan.
@@ -43,28 +50,41 @@ Vid den slutliga jämförelsen mellan de två championmodellerna och persistence
 
 Eftersom perioderna är dynamiska kan både datum och antal observationer förändras vid kommande körningar.
 
-## Hur vi undviker dataläckage
+## Dataläckage och tillgänglig information
 
-Dataläckage innebär att modellen använder information som inte skulle vara tillgänglig vid prognostillfället. Det kan ge missvisande goda resultat vid utvärderingen.
+Dataläckage innebär att en modell vid träning eller utvärdering får information som inte skulle vara tillgänglig vid prognostillfället. Det kan ge missvisande goda resultat. Den förskjutna modellen använder medvetet framtida väderobservationer i sin historiska utvärdering; denna begränsning beskrivs nedan.
 
 Projektet minskar risken för dataläckage genom att:
 
 - **Dela upp datan kronologiskt:** Modellerna tränas på äldre observationer och utvärderas på senare data.
+
 - **Separera träning, validering och test:** Träningsdata används för modellträning, valideringsdata för kandidatval och testdata för jämförelse med befintlig champion.
+
 - **Använda en tydlig prognoshorisont:** Målvärdet är PM2.5 sex timmar framåt. Framtida PM2.5-observationer används inte som indata.
+
 - **Undvika interpolering:** Saknade värden interpoleras inte, eftersom interpolering kan använda framtida observationer och därmed orsaka dataläckage. I stället tas rader med saknade värden bort.
 
 ### Skillnad mellan modellvarianterna
 
-**Den vanliga modellen** använder PM2.5 och väderobservationer från prognostillfället (T) för att förutsäga PM2.5 sex timmar senare (T+6). Modellen tar inte uttryckligen hänsyn till hur vädret förändras under dessa sex timmar, utan använder de aktuella förhållandena som underlag för prognosen.
+Den vanliga modellen använder PM2.5 och väderobservationer vid prognostillfället (T) för att förutsäga PM2.5 sex timmar senare (T+6).
 
-**Den förskjutna modellen (T+6)** tränas och utvärderas med väderobservationer från prognostillfället (T), där vädervärdena antas vara desamma sex timmar senare (T+6). Vid liveprediktioner används däremot väderprognoser för T+6.
+Den förskjutna modellen använder PM2.5 vid T, men vädervariabler från T+6. Syftet är att undersöka om väderförhållandena vid den tidpunkt prognosen avser kan förbättra prediktionen.
 
-Eftersom båda modellerna tränas och utvärderas med information som är tillgänglig vid prognostillfället uppstår inget dataläckage från framtida väderobservationer.
+Vid historisk träning och utvärdering används faktiska väderobservationer från T+6. Dessa är inte tillgängliga vid prognostillfället T. Vid live-prediktion används i stället väderprognoser för T+6, vilka kan vara tillgängliga redan vid T.
+
+Det är därför viktigt att skilja mellan modellens avsedda användning och hur den historiskt utvärderas.
+
+### Informationsåtkomst vid prognostillfället
+
+En grundläggande princip är att indata vid prognostillfället T ska motsvara information som då är tillgänglig. Därför undviker projektet interpolation som använder framtida observationer för att fylla saknade värden vid T.
+
+Den förskjutna modellen använder däremot vädervariabler som uttryckligen avser T+6. I drift kan sådana variabler hämtas från en väderprognos som utfärdats senast vid T. Det gör modellens avsedda användning möjlig utan att känna till framtida observationer.
+
+**Den historiska utvärderingen är dock idealiserad.** Där används observerat väder vid T+6, som inte var känt vid T. Därför är det inte en läckagefri simulering av drift, utan ett experiment som undersöker nyttan av att känna till framtida väderförhållanden. Den uppmätta prestandan visar inte hur modellen fungerar med de väderprognoser som faktiskt skulle ha varit tillgängliga i drift.
 
 ### Begränsningar
 
-**Skillnad mellan historisk utvärdering och liveprediktion.** Den förskjutna modellen (T+6) tränas och utvärderas med antagandet att väderförhållandena är oförändrade sex timmar framåt, medan liveprediktioner använder väderprognoser för T+6. Skillnaden i väderindata innebär att de historiska resultaten inte nödvändigtvis motsvarar modellens prognosprecision vid verklig användning.
+**Skillnad mellan historisk utvärdering och drift.** Den förskjutna modellen tränas och utvärderas historiskt med observerat väder vid T+6, medan liveprediktioner använder väderprognoser för samma tidpunkt. Skillnaden i indata (*train–serve skew*) kan påverka prognosprecisionen. En mer realistisk utvärdering kräver historiska väderprognoser utfärdade senast vid respektive prognostillfälle (*hindcast*). Fram till dess kan den förskjutna modellens resultat inte tolkas som verifierad driftprestanda.
 
 **Testdata används vid championvalet.** Eftersom Test R² avgör om en ny kandidat ersätter befintlig champion är testperioden inte en helt oberoende slututvärdering. Upprepade jämförelser mot samma testdata kan innebära att modellvalet indirekt anpassas till testperioden, vilket kan ge en alltför optimistisk bild av framtida prestanda.
 
@@ -75,15 +95,22 @@ Alla modeller tränas på träningsdata och jämförs på valideringsdata. Model
 Följande modeller ingår i jämförelsen:
 
 - **Persistence-baseline:** Antar att PM2.5-halten om sex timmar är densamma som vid prognostillfället. Används som en enkel referens för att bedöma om de övriga modellerna ger bättre prognoser.
+
 - **Linear Regression:** En linjär modell som beskriver sambandet mellan olika features och framtida PM2.5-halter.
+
 - **Ridge Regression:** Linjär regression med regularisering som begränsar modellens koefficienter och minskar risken för överanpassning.
+
 - **Random Forest:** Kombinerar prognoser från många beslutsträd för att ge ett mer stabilt resultat.
+
 - **HistGradientBoosting:** Bygger beslutsträd stegvis, där varje nytt träd försöker minska felen från de tidigare träden.
+
 - **Support Vector Regression(SVR):** Använder stödvektorer och kan med hjälp av en kernel hitta icke-linjära samband. Modellen använder en toleransmarginal för små prognosfel.
+
 - **LightGBM:** En snabb och effektiv variant av gradientboosting som bygger beslutsträd stegvis för att minska prognosfelen.
+
 - **XGBoost:** En annan variant av gradientboosting som bygger beslutsträd stegvis och använder regularisering för att minska risken för överanpassning.
 
-Samma modelltyper utvärderas för både den vanliga och den förskjutna modellvarianten. Den vanliga modellen använder väderobservationer från prognostillfället (T), medan den förskjutna modellen antar att väderförhållandena är oförändrade fram till T+6.
+Samma modelltyper utvärderas för både den vanliga och den förskjutna modellvarianten. Den vanliga modellen använder observerat väder vid T, medan den förskjutna modellen i den historiska utvärderingen använder observerat väder vid T+6.
 
 ## Vinnande modeller (både vanlig och T+6)
 
@@ -94,10 +121,14 @@ Vid körningen den 23 oktober 2026 valdes SVR som bästa kandidat för både den
 Samtliga modeller jämfördes på samma 2 595 testobservationer från perioden 1 juli till 23 oktober 2026.
 
 | Modell | MAE | RMSE | R² | Bias | Kommentar |
+
 |---|---:|---:|---:|---:|---|
+
 | Persistence-baseline | 1,741 | 2,628 | 0,414 | −0,004 | Senaste uppmätta PM2.5-värde används som prognos |
+
 | SVR (vanlig) | 1,545 | 2,265 | 0,565 | 0,056 | Väder vid prognostillfället |
-| **SVR (T+6)** | **1,536** | **2,231** | **0,578** | **0,103** | Antaget oförändrat väder vid T+6 |
+
+| **SVR (T+6)** | **1,536** | **2,231** | **0,578** | **0,103** | Observerat väder vid T+6 |
 
 ### Tolkning
 
@@ -105,7 +136,7 @@ Båda SVR-modellerna presterar bättre än persistence-baseline. Den vanliga mod
 
 Den förskjutna modellen uppnår något bättre resultat än den vanliga, men skillnaden är liten. Den har också något högre positiv Bias, vilket innebär en större genomsnittlig överskattning av PM2.5-halten.
 
-Resultatet för den förskjutna modellen bör tolkas med försiktighet eftersom den historiska utvärderingen bygger på antagandet att vädret vid T+6 är detsamma som vid T, medan liveprediktioner använder väderprognoser för T+6. Modellens träffsäkerhet vid liveprediktioner kan därför skilja sig från resultaten i den historiska utvärderingen.
+Den förskjutna modellens lilla fördel bygger på observerat väder vid T+6. Eftersom liveprediktioner i stället använder väderprognoser kan fördelen inte betraktas som verifierad vid drift.
 
 ## Felanalys
 
@@ -134,8 +165,11 @@ För att undersöka hur modellerna fungerar vid höga föroreningsnivåer använ
 Följande resultat avser de nytränade SVR-kandidaterna på **valideringsdata**, inte de slutliga championmodellerna på testdata.
 
 | Modell | High PM2.5 MAE (µg/m³) | High PM2.5 Bias (µg/m³) |
+
 |---|---:|---:|
+
 | SVR (vanlig) | 6,766 | −5,796 |
+
 | SVR (T+6) | 6,879 | −6,086 |
 
 Resultaten visar att båda modellerna har betydande prognosfel vid höga PM2.5-halter. Den tydligt negativa Bias visar dessutom att modellerna systematiskt underskattar dessa koncentrationer.
@@ -170,7 +204,7 @@ En möjlig vidareutveckling är att genomföra motsvarande felanalys uppdelad ef
 
 ## Vad resultaten betyder i praktiken
 
-Modellerna kan ge användaren en uppskattning av hur PM2.5-halten i Malmö förväntas utvecklas sex timmar framåt. Prognoserna kan därmed fungera som ett stöd vid exempelvis planering av utomhusaktiviteter.
+Modellerna kan ge en uppskattning av hur PM2.5-halten vid Malmö Dalaplan förväntas utvecklas sex timmar framåt. Resultaten visar en förbättring jämfört med persistence-baseline, men modellernas praktiska användbarhet är ännu inte verifierad.
 
 Även om SVR-modellerna förbättrar MAE med cirka 11–12 % jämfört med persistence-baseline motsvarar det endast omkring 0,2 µg/m³ i minskat genomsnittligt prognosfel. Förbättringen är alltså mätbar, men dess praktiska betydelse är begränsad och beror på hur prognoserna ska användas.
 
@@ -186,15 +220,13 @@ Utvärderingen visar att maskininlärningsmodellerna kan förbättra prognoserna
 
 - **Båda championmodellerna överträffar persistence-baseline.** På testdata uppnår de cirka 11–12 % lägre MAE, vilket visar att modellerna tillför prognosvärde. Förbättringen är dock relativt liten i absoluta tal.
 
-- **Den förskjutna modellen presterar något bättre.** Skillnaden mot den vanliga modellen är liten. Eftersom den historiska utvärderingen bygger på antagandet att vädret vid T+6 är detsamma som vid T är det osäkert om fördelen kvarstår vid liveprediktioner med väderprognoser.
-
-- **Den förskjutna modellen presterar något bättre.** Skillnaden mot den vanliga modellen är liten. Vid liveprediktioner används väderprognoser för T+6 i stället för antaget oförändrat väder, vilket kan påverka modellens träffsäkerhet både positivt och negativt.
+- **Den förskjutna modellen presterar något bättre.** Skillnaden mot den vanliga modellen är liten och bygger på observerat väder vid T+6. Det är ännu inte visat om fördelen kvarstår med väderprognoser tillgängliga vid T.
 
 - **Höga PM2.5-koncentrationer är en tydlig svaghet.** Den fördjupade analysen på valideringsdata visar att modellerna tenderar att underskatta höga halter och att persistence-baseline presterar bättre vid dessa nivåer.
 
 - **Modellvalet beror på vad som prioriteras.** När generell prognosprecision prioriteras är SVR det bästa alternativet, men när höga koncentrationer ges större betydelse kan andra modeller eller persistence-baseline vara bättre.
 
-Sammantaget stödjer resultaten användningen av SVR för generella sex-timmarsprognoser av PM2.5. Däremot ger utvärderingen inte tillräckligt stöd för att använda modellerna som ett tillförlitligt varningssystem för höga föroreningsnivåer.
+Sammantaget är SVR den starkaste kandidaten för generella sex-timmarsprognoser i den genomförda utvärderingen. För praktisk användning krävs ytterligare verifiering, särskilt vid höga föroreningsnivåer.
 
 ## Slutsatser som resultaten inte stödjer
 
@@ -220,7 +252,7 @@ Sammantaget visar resultaten modellernas prognosprecision under de undersökta f
 
 **Skillnader i datakvalitet.** Valideringsdatan består av kvalitetskontrollerade värden, medan testdatan kan innehålla preliminära mätvärden som senare korrigeras. Resultaten på testdata kan därför förändras om datan hämtas på nytt.
 
-**Liveprediktioner är ännu inte utvärderade.** Den förskjutna modellen (T+6) använder väderprognoser vid liveprediktioner i stället för antaget oförändrat väder. Det är därför ännu inte fastställt om detta förbättrar eller försämrar modellens träffsäkerhet jämfört med den historiska utvärderingen.
+**Liveprediktioner är ännu inte utvärderade.** För den förskjutna modellen saknas en jämförbar utvärdering med historiska väderprognoser tillgängliga vid T. Därför är modellens prognosprecision i drift ännu inte verifierad.
 
 **Geografisk avgränsning.** Modellen prognostiserar PM2.5 vid Malmö Dalaplan, med väderdata från Malmö A cirka fyra kilometer bort. Resultaten gäller de förhållanden som undersökts vid denna station.
 
@@ -242,9 +274,9 @@ I den aktuella körningen valdes Support Vector Regression (SVR) som bästa kand
 
 Följande förbättringar föreslås:
 
-1. **Förbättra prognoser vid höga PM2.5-halter.** Undersök alternativa modeller, viktade förlustfunktioner eller andra metoder som lägger större vikt vid höga koncentrationer..
+1. **Förbättra prognoser vid höga PM2.5-halter.** Undersök alternativa modeller, viktade förlustfunktioner eller andra metoder som lägger större vikt vid höga koncentrationer.
 
-2. **Utvärdera med verkliga väderprognoser.** Utvärdera den förskjutna modellen med väderprognoser som fanns tillgängliga vid respektive prognostillfälle och jämför resultaten med den historiska utvärderingen som bygger på antaget oförändrat väder.
+2. **Utvärdera med verkliga väderprognoser.** Utvärdera den förskjutna modellen med väderprognoser som fanns tillgängliga vid respektive prognostillfälle och jämför resultaten med den historiska utvärderingen som bygger på observerat väder vid T+6.
 
 3. **Undersök skillnadernas statistiska säkerhet.** Använd exempelvis konfidensintervall för att bedöma om skillnaderna mellan modellerna är tillräckligt tydliga för att motivera ett modellbyte.
 
