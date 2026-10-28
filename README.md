@@ -54,7 +54,8 @@ predicting_air_quality/
 ├── logs/            # Loggar: championer, datakontroller, jämförelser och projektlogg
 ├── models/          # Sparade championmodeller (.joblib) med metadata (.json)
 ├── notebooks/       # Notebooks för utforskning och analys
-├── prognoser/       # TODO: gruppen fyller i
+├── prognoser/       # Live-prediktioner: rå väderprognos (JSON + 24h-CSV) per körning,
+│                    # PM2.5-mätningar (pm25/) och prediktioner_live.csv för uppföljning
 ├── src/             # Projektets källkod
 ├── tests/           # Tester (pytest)
 ├── config.toml      # Gemensamma inställningar: sökvägar, API:er, stationer, horisont och urvalsmått
@@ -140,11 +141,13 @@ pytest
 
 ## Viktigaste resultat
 
-> TODO: gruppen fyller i en jämförelsetabell och huvudslutsatsen.
+Båda championmodellerna (SVR) presterar bättre än persistence-baseline med cirka 11–12 % lägre MAE på testdatan, motsvarande omkring 0,2 µg/m³ lägre genomsnittligt prognosfel. Den förskjutna modellen (T+6) presterar marginellt bäst, men skillnaden är liten. Modellerna underskattar höga PM2.5-halter, så resultaten stödjer användning för generella prognoser men inte som varningssystem. Siffrorna avser pipeline-körningen 2026-10-23.
 
 | Modell | MAE | RMSE | R² | Bias |
 |---|---|---|---|---|
-| | | | | |
+| Persistence-baseline | 1,741 | 2,628 | 0,414 | −0,004 |
+| SVR (vanlig) | 1,545 | 2,265 | 0,565 | 0,056 |
+| **SVR (förskjuten, T+6)** | **1,536** | **2,231** | **0,578** | 0,103 |
 
 Mer om utvärderingen finns i [docs/evaluation.md](docs/evaluation.md).
 
@@ -179,8 +182,10 @@ Vi har använt generativ AI (bland annat Claude från Anthropic) som stöd i arb
 
 ## Licens och användningsvillkor
 
-- **Kod:** TODO: gruppen väljer licens.
-- **Data:** Data från SMHI används under licensen [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). TODO: kontrollera villkoren för luftkvalitetsdatan från Naturvårdsverkets API.
+- **Kod:** [MIT-licensen](LICENSE) – fullständig licenstext finns i filen `LICENSE`.
+- **Data:**
+  * **SMHI:** Används under licensen [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/).
+  * **Naturvårdsverket (luftkvalitet):** Används under licensen [CC0 1.0 Universal (Public Domain Dedication)](https://creativecommons.org/publicdomain/zero/1.0/).
 
 ## Arbetsflöde
 
