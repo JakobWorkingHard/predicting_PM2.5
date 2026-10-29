@@ -1029,3 +1029,13 @@ target                    23
 2026-10-23 14:10:51,016 | INFO | pm25 | Ankarpunkt T_obs: 2026-10-21 11:00:00+02:00
 2026-10-23 14:10:51,020 | WARNING | pm25 | Ingen komplett timme hittades — ingen ankarpunkt.
 2026-10-23 14:10:51,023 | INFO | pm25 | Ankarpunkt T_obs: 2026-10-21 11:00:00+02:00
+2026-10-28 20:15:34,927 | INFO | __main__ | Startar live-prediktion
+2026-10-28 20:15:36,539 | INFO | pm25 | Hämtar SMHI-punktprognos...
+2026-10-28 20:15:36,887 | INFO | pm25 | Prognos hämtad: referenstid 2026-10-28 18:45:00+00:00, 81 steg fram till 2026-11-08 01:00:00+01:00.
+2026-10-28 20:15:40,849 | INFO | pm25 | Senaste PM2.5 hämtad: 48 rader, senaste 48 timmarna.
+2026-10-28 20:15:42,552 | INFO | pm25 | Senaste väderobservationer hämtade: 47 timmar, 5 parametrar.
+2026-10-28 20:15:42,567 | INFO | pm25 | Ankarpunkt T_obs: 2026-10-28 19:00:00+01:00
+2026-10-28 20:15:42,568 | INFO | pm25 | T_obs: 2026-10-28 19:00:00+01:00 (1.3 h gammal) -> prediktion för 2026-10-29 01:00:00+01:00
+2026-10-28 20:15:42,573 | WARNING | pm25 | Live-körning hoppades över: T_obs redan predikterad (slå av [live].idempotent för att köra ändå).
+2026-10-28 20:15:42,573 | INFO | pm25 | Tidigare prediktioner för T_obs 2026-10-28 19:00:00+01:00:
+2026-10-28 20:15:42,579 | INFO | __main__ | Live-körningen är klar
