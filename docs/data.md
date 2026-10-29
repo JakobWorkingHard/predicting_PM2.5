@@ -1,6 +1,6 @@
 # Data
 
-Projektet använder timvisa mätningar av PM2.5 från Malmö Dalaplan och väderobservationer från SMHI:s station Malmö A. De två källorna slås ihop på tidsstämpel. Perioderna beräknas dynamiskt vid varje körning (se nedan), så i princip räcker det att köra `python main.py` för att få aktuell data.
+Projektet använder timvisa mätningar av PM2.5 från Malmö Dalaplan och väderobservationer från SMHI:s station Malmö A. De två källorna slås ihop på tidsstämpel. Perioderna beräknas dynamiskt vid varje körning (se nedan), för att få aktuell data behöver endast `python main.py` köras.
 
 ## Källor och ansvarig
 
@@ -60,7 +60,7 @@ Alla filer skrivs med läget "skapa bara om filen saknas" (`generate_csv` i `src
 | `data/raw/` | Rådata per period och källa, som den hämtades från API:erna |
 | `data/merged/` | PM2.5 och väder sammanslagna på tidsstämpel |
 | `data/validated/` | Skapas av koden men skrivs inte längre; validerad data ingår i de processade filerna |
-| `data/processed/` | Bearbetade dataset som modellerna tränas på: validering, features, målvariabel, rader med saknade värden borttagna |
+| `data/processed/` | Bearbetade dataset för modellträning och utvärdering, med validerad data, skapade features och målvariabel samt borttagna rader med saknade värden |
 
 **Återskapa data:** radera innehållet i `data/raw/`, `data/merged/` och `data/processed/` och kör `python main.py` från projektets rot. Notera att `data/` ligger i `.gitignore` – datat mappas **inte** av git, och olika datorer kan därför ha olika lokala filer. Eftersom perioderna beräknas om dynamiskt kan en omhämtning också ge andra perioder (och därmed andra filnamn) än tidigare körningar.
 
@@ -83,7 +83,7 @@ Rader där någon feature eller själva målet saknas tas bort (`dropna`) **efte
 
 - **Mål:** PM2.5-halten vid T + 6 timmar.
 - **Features** (`[model.features]` i `config.toml`): `pm25`, `Lufttemperatur`, `vind_sin`, `vind_cos` (vindriktning som sin/cos; vindstilla ger 0/0), `Vindhastighet`, `Relativ luftfuktighet`, `Nederbördsmängd`, samt tidsfeatures för **måltiden**: `timme_sin`, `timme_cos`, `helg`, `helg_timme_sin` och `helg_timme_cos` (se `add_time_features` i `src/features.py`).
-- **Två modellinjer:** den *vanliga* använder väder observerat vid tidpunkten T; den *förskjutna* ersätter väderkolumnerna med observationen vid T + 6 timmar (`ersatt_vader_med_maltidsvader`, som anropas före sin/cos-omvandlingen så att vind-featuren följer med). Vid live-prediktion fylls den sloten i stället med SMHI:s väderprognos för måltiden (se `docs/evaluation.md`).
+- **Två modellinjer:** Den *vanliga* använder observerat väder vid tidpunkten T. Den *förskjutna* använder i stället observerat väder vid T + 6 timmar. Vädervariablerna ersätts före sin/cos-omvandlingen, så att även vindriktningens features baseras på måltidens väder. Vid live-prediktion används SMHI:s väderprognos för T + 6 i stället för faktiska observationer (se `docs/evaluation.md`).
 
 ## Statistik för senaste körning (2026-10-23, ur `logs/datakontroll.csv`)
 
@@ -98,8 +98,10 @@ Siffrorna uppdateras vid varje pipeline-körning; aktuell statistik finns alltid
 ## Kvalitetsproblem
 
 - **Preliminär data i test och live:** `latest-months` är inte kvalitetskontrollerad; värden kan ändras eller underkännas i efterhand, vilket gör testresultat från olika körningar svåra att jämföra exakt.
-- **Nederbörd saknas i hela dygnsblock:** luckorna börjar och slutar ofta vid samma klockslag, vilket tyder på att hela mätdygn har underkänts i SMHI:s kvalitetskontroll.
-- **Ett längre avbrott i PM2.5:** PM2.5 saknas 17 timmar i följd, från 2026-08-07 kl. 16 till 2026-08-08 kl. 08 (i testdatan). Det är ett enda sammanhängande avbrott i mätningen, inte utspridda luckor. Raderna tas bort enligt avsnittet Saknade värden.
+
+- **Saknade vädervärden:** Samtliga vädervariabler saknas samtidigt under vissa perioder. Nederbördsmängd har därutöver flera separata luckor där övriga vädervariabler har registrerade värden.
+- **Saknade PM2.5-värden:** PM2.5 har främst kortare och mer utspridda luckor, men även längre sammanhängande bortfall. Rader med saknade värden tas bort enligt avsnittet Saknade värden.
+
 
 ## Begränsningar
 
