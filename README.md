@@ -166,12 +166,17 @@ Mer om utvärderingen finns i [docs/evaluation.md](docs/evaluation.md).
 
 ## Användning av generativ AI
 
-Vi har använt generativ AI (bland annat Claude från Anthropic) som stöd i arbetet, ungefär som en extra diskussionspartner. AI har inte skrivit projektet åt oss. Vi har använt det till att:
+Vi har använt olika generativa AI-verktyg som stöd i arbetet, både som diskussionspartner och som hjälp vid kodutveckling och dokumentation. **Vi har själva styrt arbetet och ansvarat för de lösningar vi valt att använda.**
 
-- **Diskutera lösningar:** jämföra olika sätt att lösa ett problem, till exempel hur championmodellen ska väljas, hur tränings-, validerings- och testperioder kan beräknas dynamiskt och hur dataläckage kan undvikas.
+Vi har använt AI till att:
+
+- **Diskutera lösningar:** jämföra olika sätt att lösa problem, till exempel hur championmodellen ska väljas, hur tränings-, validerings- och testperioder kan beräknas dynamiskt och hur dataläckage kan undvikas.
+- **Generera och vidareutveckla kod:** få hjälp att skriva kod utifrån våra instruktioner samt testa, anpassa och vidareutveckla lösningarna.
 - **Granska kod:** låta AI läsa igenom vår egen och varandras kod för att hitta buggar, inkonsekvenser och kommentarer som inte längre stämmer.
 - **Strukturera kod:** få förslag på hur långa funktioner och filer kan delas upp, hur dubblerad logik kan samlas på ett ställe och hur funktioner kan namnges och dokumenteras.
-- **Förklara:** reda ut begrepp, felmeddelanden och git-arbetsflöden.
+- **Formulera och bearbeta text:** få förslag på formuleringar, förbättra språket och strukturera dokumentation och rapporttexter.
+- **Förklara:** reda ut begrepp, felmeddelanden och Git-arbetsflöden.
+
 
 ### Så har vi granskat resultatet
 
